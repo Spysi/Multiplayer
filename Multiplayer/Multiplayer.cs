@@ -54,65 +54,108 @@ namespace Multiplayer
             databaseWiring = GameObject.Find("DatabaseWiring");
             playerDatabase = GameObject.Find("PlayerDatabase");
             parts = new List<Part>();
+
+            //databaseBody
+
             for (int i = 1; i <= 8; i++)
             {
-                Parsing1(databaseBody, "Remove part", "Assemble 2",i);
+                Parsing1(databaseBody, "Remove part", "Assemble 2",i, "Wait");
             }
-            Parsing1(databaseBody, "Remove part", "Assemble", 9);
+            Parsing1(databaseBody, "Remove part", "Assemble", 9, "Wait");
 
-            Parsing2(databaseBody, "Remove part", "Assemble", 10, true);
-            Parsing2(databaseBody, "Remove part", "Assemble", 11, true);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 10, true);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 11, true);
             for (int i = 12; i <= 21; i++)
             {
-                Parsing2(databaseBody, "Remove part", "Assemble", i, false);
-            }   
+                Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", i, false);
+            }
+            Parsing3(databaseBody, "Remove part", "Assemble", 22);
+            Parsing3(databaseBody, "Remove part", "Assemble", 23);
 
-            
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 24, false);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 25, false);
 
-            /*
-            tempParts = new List<GameObject>();
-            carParts = new List<GameObject>();
-            trigerParts = new List<GameObject>();
-            //part.Awake();
-            Parsing("Removal", "Remove part",null, 1);
-            carParts = tempParts;
-            tempParts = new List<GameObject>();
-            Parsing("Assembly", "Assemble", "Assemble 2", 2);
-            */
-            //carParts.AddRange(PartsCarParsingINA(GameObject.Find("dashboard(Clone)").transform.GetComponentsInChildren<Transform>(true), "RemovePart"));
-            //carParts.AddRange(PartsCarParsingINA(GameObject.Find("dashboard(Clone)").transform.GetComponentsInChildren<Transform>(true), "RemovePart"));
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 26, true);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 27, true);
 
-            //engineParts = GameObject.Find("CARPARTS").transform.GetChild(1).gameObject;
-            //radiator = GameObject.Find("SATSUMA(557kg, 248)").transform.GetChild(11).GetChild(36).gameObject;
+            Parsing3(databaseBody, "Remove part", "Assemble", 28);
+            Parsing3(databaseBody, "Remove part", "Assemble", 29);
 
-            /*
-             radiator.SetActive(true);
-             FsmState stat = radiator.transform.GetChild(1).GetComponent<PlayMakerFSM>().FsmStates[12];
+            Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", 30, true);
 
-             stat.Actions[0] = accation;
+            for(int i = 31; i <= 35; i++)
+            {
+                Parsing1(databaseBody, "Remove part", "Assemble 2", i, "Wait");
+            }
 
-             PartsCarParsing(engineParts);
-            */
-            //radiator.transform.GetChild(1).GetComponent<PlayMakerFSM>().FsmStates[12].Actions[2] = act;
+            Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", 42, false);
+
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 43, false);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 44, false);
+
+            for(int i = 45; i <= 48; i++)
+            {
+                Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", i, false);
+            }
+
+            //databaseMechanics
+
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 0, "Wait");
+            Parsing1(databaseMechanics, "Remove part", "Assemble", 1, "Wait");
+
+            for (int i = 2; i <= 5; i++)
+            {
+                Parsing1(databaseMechanics, "Remove part", "Assemble 2", i, "Wait");
+            }
+            for(int i = 6; i <= 14; i++)
+            {
+                Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i, false);
+            }
+
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 15, "Wait");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 16, "Wait");
+
+            Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", 17, false);
+
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 18, "Wait");
+
+            for(int i =19; i <= 21; i++)
+            {
+                Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i, false);
+            }
+
+            Parsing1(databaseMechanics, "Remove part", "Assemble", 22, "Wait");
+
+            for (int i = 23; i <= 25; i++)
+            {
+                Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i, false);
+            }
+
+            Parsing1(databaseMechanics, "Remove part", "Stock", 26, "Find correct part 3");
+            Parsing1(databaseMechanics, "Remove part", "Assemble", 27, "Wait");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 28, "Wait 2");
+
         }
-        private void Parsing1(GameObject database,string stateName, string stateName2, int ino)
+        private void Parsing1(GameObject database,string stateName, string stateName2, int ino, string nameToState)
         {
             Part part = new Part();
             part.gameObj = database.transform.GetChild(ino).gameObject;
             FsmTransition[] transition = new FsmTransition[3];
             transition[2] = new FsmTransition();
-            transition[2].FsmEvent = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").FsmEvents[5];
-            transition[2].ToState = "Wait";
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").Initialize();
+            transition[2].FsmEvent = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").FsmEvents[3];
+            transition[2].ToState = nameToState;
             transition[1] = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions[1];
             transition[0] = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions[0];
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions = transition;
-            
+
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").Initialize();
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(send, parts.Count));
             part.removeEvent = "REMOVE";
             part.remove = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").SendEvent;
 
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").AddAction(stateName2, new Assembly(send2, parts.Count));
-            part.assembleEvent = "SETUP";
+            part.assembleEvent = "DISASSEMBLE";
             part.assemble = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").SendEvent;
 
             part.bolts.AddRange(part.gameObj.GetComponentsInChildren<PlayMakerFSM>(true));
@@ -120,7 +163,7 @@ namespace Multiplayer
             parts.Add(part);
         }
 
-        private void Parsing2(GameObject database, string stateName, string stateName2, int ino, bool altBolt)
+        private void Parsing2(GameObject database, string stateName, string stateName2,string triggerName, int ino, bool altBolt)
         {
             Part part = new Part();
             part.gameObj = database.transform.GetChild(ino).gameObject;
@@ -130,7 +173,7 @@ namespace Multiplayer
             part.remove = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").SendEvent;
             part.removeEvent = "REMOVE";
 
-            GameObject temp = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").FsmVariables.GetFsmGameObject("SpawnPartLocation").Value;
+            GameObject temp = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").FsmVariables.GetFsmGameObject(triggerName).Value;
             
             temp.GetPlayMakerFSM("Assembly").Initialize();
             part.assemble = temp.GetPlayMakerFSM("Assembly").SendEvent;
@@ -167,10 +210,13 @@ namespace Multiplayer
             Part part = new Part();
             part.gameObj = database.transform.GetChild(ino).gameObject;
             GameObject temp = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value;
-            temp.GetPlayMakerFSM("Removal").Initialize();
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(send, parts.Count));
-            part.remove = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").SendEvent;
+            
+            temp.transform.GetChild(temp.transform.childCount-1).GetPlayMakerFSM("Removal").Initialize();
+            temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(send, parts.Count));
+            part.remove = temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").SendEvent;
             part.removeEvent = "REMOVE";
+
+            temp = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").FsmVariables.GetFsmGameObject("SpawnPartLocation").Value;
 
             temp.GetPlayMakerFSM("Assembly").Initialize();
             part.assemble = temp.GetPlayMakerFSM("Assembly").SendEvent;
@@ -185,7 +231,7 @@ namespace Multiplayer
 
             temp.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions = transition;
 
-            part.bolts.AddRange(part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetComponentsInChildren<PlayMakerFSM>(true));
+            //part.bolts.AddRange(part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.transform.);
             
             parts.Add(part);
         }
