@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using HutongGames.PlayMaker;
+using System.Net.Sockets;
 using System;
-using System.Collections.Generic;
 
 namespace Multiplayer
 {
@@ -26,14 +26,14 @@ namespace Multiplayer
     class Assembly : FsmStateAction
     {
         public delegate void Send(int id, int doi);
-        Send send;
-        public Assembly(Send temp, int id1) { send = temp; id = id1; }
+        Socket send;
+        public Assembly(Socket socket, int id1) { send = socket; id = id1; }
 
         public int id;
 
         public override void OnEnter()
         {
-            send(id, 2);
+            send.Send(BitConverter.GetBytes(id));
             Finish();
         }
     }

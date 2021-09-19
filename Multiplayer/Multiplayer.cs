@@ -2,9 +2,12 @@
 using UnityEngine;
 using HutongGames.PlayMaker;
 using System;
+using System.Text;
 using System.Collections.Generic;
 using HutongGames.PlayMaker.Actions;
 using MSCLoader;
+using System.Net.Sockets;
+using UnityEngine.UI;
 
 namespace Multiplayer
 {
@@ -12,12 +15,10 @@ namespace Multiplayer
     {
         public override string ID => "Multiplayer"; //Your mod ID (unique)
         public override string Name => "Multiplayer"; //You mod name
-        public override string Author => "Your Username"; //Your Username
-        public override string Version => "1.0"; //Version
+        public override string Author => "Spysi, Kiri111enz"; //Your Username
+        public override string Version => "A0.1"; //Version
 
-        // Set this to true if you will be load custom assets from Assets folder.
-        // This will create subfolder in Assets folder for your mod.
-        //public override bool UseAssetsFolder => false;
+        public override string Description => "Multiplayer mod";
 
         public static void SendMsg(int id,int doi)
         {
@@ -31,9 +32,55 @@ namespace Multiplayer
         static Assembly.Send send2 = SendMsg;
         static Screw.Send send3 = SendMsg;
         static UnScrew.Send send4 = SendMsg;
-        GameObject databaseBody, databaseMechanics, databaseMotor, databaseOrders, databaseWiring, playerDatabase;
+        GameObject databaseBody, databaseMechanics, databaseMotor, databaseOrders, databaseWiring, playerDatabase, player, ui;
+        public string serverIP = "Server IP ";
+        Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        public override void MenuOnLoad()
+        {
+            AssetBundle ab = ModAssets.LoadBundle(this, "multiplayer");
+             ;
+
+            ui = GameObject.Instantiate(ab.LoadAsset("UIPrefab.prefab") as GameObject);
+            ab.Unload(false);
+            ui.transform.position = new Vector3(Screen.width, Screen.height, 0);
+            ui.transform.SetParent(ModLoader.UICanvas.transform);
+            ui.transform.localScale = new Vector3(1, 1, 1);
+            ui.transform.GetChild(0).GetComponent<Button>().onClick.AddListener(Connect);
+            
+            socket.SendTimeout = 3000;
+            socket.ReceiveTimeout = 3000;
+            //ModLoader.GetModAssetsFolder(new Multiplayer(),true);
+            //style.fontSize = 0;
+            //style.fontStyle = GameObject.Find("Buttons").transform.GetChild(0).GetChild(0).GetComponent<TextMesh>().fontStyle;
+
+        }
+        public override void MenuUpdate()
+        {
+            //if (socket.Poll(-1, SelectMode.SelectError)) Console.WriteLine("This Socket has an error.");
+        }
+
+
+        private void Connect()
+        {
+            //socket.Disconnect();
+            try
+            {
+                socket.Connect(System.Net.IPAddress.Parse(ui.transform.GetChild(1).GetComponent<InputField>().text), 25565);
+            }
+            catch (SocketException) { ui.transform.GetChild(2).GetComponent<Text>().text = "Connection failed!"; }
+            if (!socket.Connected) ui.transform.GetChild(2).GetComponent<Text>().text = "Connection failed!";
+            else ui.transform.GetChild(2).GetComponent<Text>().text = "Сonnection successful!";
+            short i = 0;
+
+            socket.Send(BitConverter.GetBytes(i));
+            socket.Send(Encoding.UTF8.GetBytes("aboba"));
+
+
+        }
         public override void PreLoad()
         {
+            ui.SetActive(false);
+            UnityEngine.Object.Destroy(ui);
             GameObject carParts = GameObject.Find("CARPARTS");
             PlayMakerFSM[] objs = carParts.transform.GetComponentsInChildren<PlayMakerFSM>(true);
             bolts = new List<Bolt>();
@@ -108,8 +155,19 @@ namespace Multiplayer
 
             }
         }
+        public override void FixedUpdate()
+        {
+            short i = 1;
+            socket.Send(BitConverter.GetBytes(i));
+            socket.Send(BitConverter.GetBytes(player.transform.position.x));
+            socket.Send(BitConverter.GetBytes(player.transform.position.y));
+            socket.Send(BitConverter.GetBytes(player.transform.position.z));
+            socket.Send(BitConverter.GetBytes(player.transform.rotation.eulerAngles.y));
+        }
         public override void OnLoad()
         {
+            
+            player = GameObject.Find("PLAYER");
             databaseBody = GameObject.Find("DatabaseBody");
             databaseMechanics = GameObject.Find("DatabaseMechanics");
             databaseMotor = GameObject.Find("DatabaseMotor");
@@ -222,6 +280,7 @@ namespace Multiplayer
             {
                 Parsing1(databaseMotor, "Remove part", "Assemble", i, "Wait", "Trigger", "Check for Part collision");
             }
+            
         }
         private void Parsing1(GameObject database,string stateName, string stateName2, int ino, string nameToState, string triggerName, string stateName3)
         {
@@ -241,7 +300,7 @@ namespace Multiplayer
             part.removeEvent = "REMOVE";
             part.remove = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").SendEvent;
 
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").AddAction(stateName2, new Assembly(send2, parts.Count));
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").AddAction(stateName2, new Assembly(socket, parts.Count));
             part.assembleEvent = "DISASSEMBLE";
             part.assemble = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").SendEvent;
 
@@ -262,7 +321,7 @@ namespace Multiplayer
             
             temp.GetPlayMakerFSM("Assembly").Initialize();
             part.assemble = temp.GetPlayMakerFSM("Assembly").SendEvent;
-            temp.GetPlayMakerFSM("Assembly").AddAction(stateName2, new Assembly(send2, parts.Count));
+            temp.GetPlayMakerFSM("Assembly").AddAction(stateName2, new Assembly(socket, parts.Count));
             part.assembleEvent = "ASSEMBLE";
             
             FsmTransition[] transition = new FsmTransition[2];
@@ -291,7 +350,7 @@ namespace Multiplayer
 
             temp.GetPlayMakerFSM("Assembly").Initialize();
             part.assemble = temp.GetPlayMakerFSM("Assembly").SendEvent;
-            temp.GetPlayMakerFSM("Assembly").AddAction(stateName2, new Assembly(send2, parts.Count));
+            temp.GetPlayMakerFSM("Assembly").AddAction(stateName2, new Assembly(socket, parts.Count));
             part.assembleEvent = "ASSEMBLE";
 
             FsmTransition[] transition = new FsmTransition[2];
@@ -301,8 +360,6 @@ namespace Multiplayer
             transition[0] = temp.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions[0];
 
             temp.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions = transition;
-
-            //part.bolts.AddRange(part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.transform.);
             
             parts.Add(part);
         }
@@ -310,81 +367,6 @@ namespace Multiplayer
         public override void Update()
         {
             if (Input.GetKeyDown(KeyCode.Home)) parts[2].Assemble();
-        }
-
-        private void PartsCarParsingA(GameObject[] parts, string fsmName, string stateName, string stateName2, int doi)
-        {
-            for (int i = 0; i < parts.Length; i++)
-            {
-                //if (tempParts.Exists(x => parts[i] == x)) continue;
-                PlayMakerFSM part = parts[i].GetPlayMakerFSM(fsmName);
-                if (part == null) continue;
-                part.Initialize();
-                if (IsStateExists(part, stateName))
-                {
-                    //part.AddAction(stateName, new RemovePart(send, tempParts.Count, doi));
-                    tempParts.Add(parts[i].gameObject);
-                }
-                else if (IsStateExists(part, stateName2))
-                {
-                    //part.AddAction(stateName2, new RemovePart(send, tempParts.Count, doi));
-                    tempParts.Add(parts[i].gameObject);
-                }
-                else ModConsole.Log("ABOBA");
-            }
-        }
-        private void PartsCarParsingINARem(Transform[] parts, string fsmName, string stateName, string stateName2, int doi)
-        {
-            for (int i = 0; i < parts.Length; i++)
-            {
-                if (parts[i].gameObject.activeSelf) continue;
-                parts[i].gameObject.SetActive(true);
-
-                if (tempParts.Exists(x => parts[i].gameObject == x))
-                {
-                    parts[i].gameObject.SetActive(false);
-                    continue;
-                }
-                PlayMakerFSM part = parts[i].GetPlayMakerFSM(fsmName);
-                if (part == null)
-                {
-                    parts[i].gameObject.SetActive(false);
-                    continue;
-                }
-                part.Initialize();
-                if (IsStateExists(part, stateName))
-                {
-                    //part.AddAction(stateName, new RemovePart(send, tempParts.Count, doi));
-                    tempParts.Add(parts[i].gameObject);
-                }
-                else if (IsStateExists(part, stateName2))
-                {
-                    //part.AddAction(stateName2, new RemovePart(send, tempParts.Count, doi));
-                    tempParts.Add(parts[i].gameObject);
-                }
-                else ModConsole.Log("ABOBA");
-                parts[i].gameObject.SetActive(false);
-            }
-        }
-
-        private static bool IsActionExists(FsmState state, string name)
-        {
-            FsmStateAction[] actions = state.ActionData.LoadActions(state);
-            foreach (FsmStateAction action in actions)
-            {
-                ModConsole.Log(action.Name);
-                if (action.Name == name) return true;
-            }
-            return false;
-        }
-        private static bool IsStateExists(PlayMakerFSM fsm, string name)
-        {
-            foreach (FsmState state in fsm.FsmStates)
-            {
-                //ModConsole.Log(action.Name);
-                if (state.Name == name) return true;
-            }
-            return false;
         }
     }
 }
