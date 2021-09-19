@@ -19,32 +19,95 @@ namespace Multiplayer
         // This will create subfolder in Assets folder for your mod.
         //public override bool UseAssetsFolder => false;
 
-        public override void OnNewGame()
-        {
-            // Called once, when starting a New Game, you can reset your saves here
-        }
         public static void SendMsg(int id,int doi)
         {
             ModConsole.Log(id);
             ModConsole.Log(doi);
         }
         private List<Part> parts;
-        private List<GameObject> carParts, trigerParts, tempParts;
+        private List<Bolt> bolts;
+        private List<GameObject> tempParts;
         static RemovePart.Send send = SendMsg;
         static Assembly.Send send2 = SendMsg;
+        static Screw.Send send3 = SendMsg;
+        static UnScrew.Send send4 = SendMsg;
         GameObject databaseBody, databaseMechanics, databaseMotor, databaseOrders, databaseWiring, playerDatabase;
         public override void PreLoad()
         {
-            
+            GameObject carParts = GameObject.Find("CARPARTS");
+            PlayMakerFSM[] objs = carParts.transform.GetComponentsInChildren<PlayMakerFSM>(true);
+            bolts = new List<Bolt>();
+            foreach(PlayMakerFSM obj in objs)
+            {
+                if (obj.FsmName != "Screw") continue;
+                obj.Initialize();
+                Bolt bolt = new Bolt();
+                bolt.screw = obj.SendEvent;
+                bolt.bolt = obj;
+                foreach(FsmState state in obj.FsmStates)
+                {
+                    switch (state.Name)
+                    {
+                        case "Screw":
+                            obj.AddAction("Screw", new Screw(send3, bolts.Count));
+                            break;
+                        case "Screw 2":
+                            obj.AddAction("Screw 2", new Screw(send3, bolts.Count));
+                            break;
+                        case "Wait 3":
+                            obj.AddAction("Wait 3", new Screw(send3, bolts.Count));
+                            break;
+                        case "Unscrew":
+                            obj.AddAction("Unscrew", new UnScrew(send4, bolts.Count));
+                            break;
+                        case "Unscrew 2":
+                            obj.AddAction("Unscrew 2", new UnScrew(send4, bolts.Count));
+                            break;
+                        case "Wait 4":
+                            obj.AddAction("Wait 4", new UnScrew(send4, bolts.Count));
+                            break;
+                    }
+                }
+                bolts.Add(bolt);
 
+            }
+            carParts = GameObject.Find("SATSUMA(557kg, 248)");
+            objs = carParts.transform.GetComponentsInChildren<PlayMakerFSM>(true);
+            foreach (PlayMakerFSM obj in objs)
+            {
+                if (obj.FsmName != "Screw") continue;
+                obj.Initialize();
+                Bolt bolt = new Bolt();
+                bolt.screw = obj.SendEvent;
+                bolt.bolt = obj;
+                foreach (FsmState state in obj.FsmStates)
+                {
+                    switch (state.Name)
+                    {
+                        case "Screw":
+                            obj.AddAction("Screw", new Screw(send3, bolts.Count));
+                            break;
+                        case "Screw 2":
+                            obj.AddAction("Screw 2", new Screw(send3, bolts.Count));
+                            break;
+                        case "Wait 3":
+                            obj.AddAction("Wait 3", new Screw(send3, bolts.Count));
+                            break;
+                        case "Unscrew":
+                            obj.AddAction("Unscrew", new UnScrew(send4, bolts.Count));
+                            break;
+                        case "Unscrew 2":
+                            obj.AddAction("Unscrew 2", new UnScrew(send4, bolts.Count));
+                            break;
+                        case "Wait 4":
+                            obj.AddAction("Wait 4", new UnScrew(send4, bolts.Count));
+                            break;
+                    }
+                }
+                bolts.Add(bolt);
 
-
+            }
         }
-        void Asmbl()
-        {
-
-        }
-        //CarPart part = new CarPart(send);
         public override void OnLoad()
         {
             databaseBody = GameObject.Find("DatabaseBody");
@@ -59,111 +122,133 @@ namespace Multiplayer
 
             for (int i = 1; i <= 8; i++)
             {
-                Parsing1(databaseBody, "Remove part", "Assemble 2",i, "Wait");
+                Parsing1(databaseBody, "Remove part", "Assemble 2",i, "Wait", "Trigger", "Check for Part collision");
             }
-            Parsing1(databaseBody, "Remove part", "Assemble", 9, "Wait");
+            Parsing1(databaseBody, "Remove part", "Assemble", 9, "Wait", "Trigger", "Check for Part collision");
 
-            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 10, true);
-            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 11, true);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 10);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 11);
             for (int i = 12; i <= 21; i++)
             {
-                Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", i, false);
+                Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", i);
             }
             Parsing3(databaseBody, "Remove part", "Assemble", 22);
             Parsing3(databaseBody, "Remove part", "Assemble", 23);
 
-            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 24, false);
-            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 25, false);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 24);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 25);
 
-            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 26, true);
-            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 27, true);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 26);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 27);
 
             Parsing3(databaseBody, "Remove part", "Assemble", 28);
             Parsing3(databaseBody, "Remove part", "Assemble", 29);
 
-            Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", 30, true);
+            Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", 30);
 
             for(int i = 31; i <= 35; i++)
             {
-                Parsing1(databaseBody, "Remove part", "Assemble 2", i, "Wait");
+                Parsing1(databaseBody, "Remove part", "Assemble 2", i, "Wait", "Trigger", "Check for Part collision");
             }
 
-            Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", 42, false);
+            Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", 42);
 
-            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 43, false);
-            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 44, false);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 43);
+            Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 44);
 
             for(int i = 45; i <= 48; i++)
             {
-                Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", i, false);
+                Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", i);
             }
 
             //databaseMechanics
 
-            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 0, "Wait");
-            Parsing1(databaseMechanics, "Remove part", "Assemble", 1, "Wait");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 0, "Wait", "Trigger", "Check for Part collision");
+            Parsing1(databaseMechanics, "Remove part", "Assemble", 1, "Wait", "Trigger", "Check for Part collision");
 
             for (int i = 2; i <= 5; i++)
             {
-                Parsing1(databaseMechanics, "Remove part", "Assemble 2", i, "Wait");
+                Parsing1(databaseMechanics, "Remove part", "Assemble 2", i, "Wait", "Trigger", "Check for Part collision");
             }
             for(int i = 6; i <= 14; i++)
             {
-                Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i, false);
+                Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i);
             }
 
-            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 15, "Wait");
-            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 16, "Wait");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 15, "Wait", "Trigger", "Check for Part collision");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 16, "Wait", "Trigger", "Check for Part collision");
 
-            Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", 17, false);
+            Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", 17);
 
-            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 18, "Wait");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 18, "Wait", "Trigger", "Check for Part collision");
 
             for(int i =19; i <= 21; i++)
             {
-                Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i, false);
+                Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i);
             }
 
-            Parsing1(databaseMechanics, "Remove part", "Assemble", 22, "Wait");
+            Parsing1(databaseMechanics, "Remove part", "Assemble", 22, "Wait", "Trigger", "Check for Part collision");
 
             for (int i = 23; i <= 25; i++)
             {
-                Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i, false);
+                Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i);
             }
 
-            Parsing1(databaseMechanics, "Remove part", "Stock", 26, "Find correct part 3");
-            Parsing1(databaseMechanics, "Remove part", "Assemble", 27, "Wait");
-            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 28, "Wait 2");
+            Parsing1(databaseMechanics, "Remove part", "Stock", 26, "Find correct part 3", "Trigger", "Check for Part collision");
+            Parsing1(databaseMechanics, "Remove part", "Assemble", 27, "Wait", "Trigger", "Check for Part collision");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 28, "Wait 2", "Trigger", "Check for Part collision");
 
+            for (int i = 1; i <= 12; i++)
+            {
+                
+                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Wait", "Trigger", "Check for Part collision");
+            }
+            Parsing1(databaseMotor, "Remove part", "Assemble", 13, "Wait", "TriggerRacing", "Check for Part collision");
+            Parsing1(databaseMotor, "Remove part", "Assemble", 13, "Wait", "TriggerStock", "Check for Part collision");
+
+            for(int i = 14; i <= 24; i++)
+            {
+                
+                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Wait", "Trigger", "Check for Part collision");
+            }
+            Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", 25);
+            
+            for (int i = 26; i <= 29; i++)
+            {
+                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Wait", "Trigger", "Check for Part collision");
+            }
+            Parsing1(databaseMotor, "Remove part", "Assemble 2", 30, "Wait 2", "Trigger", "Check for Part ");
+            for(int i = 31; i <= 36; i++)
+            {
+                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Wait", "Trigger", "Check for Part collision");
+            }
         }
-        private void Parsing1(GameObject database,string stateName, string stateName2, int ino, string nameToState)
+        private void Parsing1(GameObject database,string stateName, string stateName2, int ino, string nameToState, string triggerName, string stateName3)
         {
             Part part = new Part();
             part.gameObj = database.transform.GetChild(ino).gameObject;
             FsmTransition[] transition = new FsmTransition[3];
             transition[2] = new FsmTransition();
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").Initialize();
-            transition[2].FsmEvent = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").FsmEvents[3];
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").Initialize();
+            transition[2].FsmEvent = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").FsmEvents[3];
             transition[2].ToState = nameToState;
-            transition[1] = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions[1];
-            transition[0] = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions[0];
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions = transition;
+            transition[1] = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").GetState(stateName3).Transitions[1];
+            transition[0] = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").GetState(stateName3).Transitions[0];
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").GetState(stateName3).Transitions = transition;
 
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").Initialize();
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(send, parts.Count));
             part.removeEvent = "REMOVE";
             part.remove = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").SendEvent;
 
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").AddAction(stateName2, new Assembly(send2, parts.Count));
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").AddAction(stateName2, new Assembly(send2, parts.Count));
             part.assembleEvent = "DISASSEMBLE";
-            part.assemble = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("Trigger").Value.GetPlayMakerFSM("Assembly").SendEvent;
-
-            part.bolts.AddRange(part.gameObj.GetComponentsInChildren<PlayMakerFSM>(true));
+            part.assemble = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").SendEvent;
 
             parts.Add(part);
         }
 
-        private void Parsing2(GameObject database, string stateName, string stateName2,string triggerName, int ino, bool altBolt)
+        private void Parsing2(GameObject database, string stateName, string stateName2,string triggerName, int ino)
         {
             Part part = new Part();
             part.gameObj = database.transform.GetChild(ino).gameObject;
@@ -187,21 +272,7 @@ namespace Multiplayer
             transition[0] = temp.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions[0];
 
             temp.GetPlayMakerFSM("Assembly").GetState("Check for Part collision").Transitions = transition;
-            
-            part.bolts.AddRange(part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetComponentsInChildren<PlayMakerFSM>(true));
-            if (altBolt)
-            {
-                try
-                {
-                    part.bolts.Add(part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateBolt").Value.GetComponent<PlayMakerFSM>());
-                }
-                catch (NullReferenceException){}
-                try
-                {
-                    part.bolts.AddRange(part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateBolts").Value.GetComponentsInChildren<PlayMakerFSM>(true));
-                }
-                catch (NullReferenceException) { }
-            }
+           
             parts.Add(part);
         }
 
@@ -234,20 +305,6 @@ namespace Multiplayer
             //part.bolts.AddRange(part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.transform.);
             
             parts.Add(part);
-        }
-
-
-
-        public override void ModSettings()
-        {
-            // All settings should be created here. 
-            // DO NOT put anything else here that settings.
-        }
-
-        public override void OnSave()
-        {
-            // Called once, when save and quit
-            // Serialize your save file here.
         }
 
         public override void Update()
