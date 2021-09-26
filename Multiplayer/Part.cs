@@ -25,7 +25,7 @@ namespace Multiplayer
 
     class Assembly : FsmStateAction
     {
-        public delegate void Send(int id, int doi);
+        //public delegate void Send(int id, int doi);
         Socket send;
         public Assembly(Socket socket, int id1) { send = socket; id = id1; }
 
@@ -33,6 +33,7 @@ namespace Multiplayer
 
         public override void OnEnter()
         {
+
             send.Send(BitConverter.GetBytes(id));
             Finish();
         }
@@ -40,15 +41,15 @@ namespace Multiplayer
 
     class RemovePart : FsmStateAction
     {
-        public delegate void Send(int id, int doi);
-        Send send;
-        public RemovePart(Send temp, int id1) { send = temp; id = id1; }
+        //public delegate void Send(int id, int doi);
+        Socket send;
+        public RemovePart(Socket socket, int id1) { send = socket; id = id1; }
 
         public int id;
 
         public override void OnEnter()
         {
-            send(id, 1);
+            send.Send(BitConverter.GetBytes(id));
             Finish();
         }
     }

@@ -8,6 +8,7 @@ using HutongGames.PlayMaker.Actions;
 using MSCLoader;
 using System.Net.Sockets;
 using UnityEngine.UI;
+using System.Threading;
 
 namespace Multiplayer
 {
@@ -20,38 +21,35 @@ namespace Multiplayer
 
         public override string Description => "Multiplayer mod";
 
-        public static void SendMsg(int id,int doi)
+        public static void SendMsg(int id, int doi)
         {
             ModConsole.Log(id);
             ModConsole.Log(doi);
         }
         private List<Part> parts;
         private List<Bolt> bolts;
-        private List<GameObject> tempParts;
-        static RemovePart.Send send = SendMsg;
-        static Assembly.Send send2 = SendMsg;
+        public byte id;
+        //static RemovePart.Send send = SendMsg;
         static Screw.Send send3 = SendMsg;
         static UnScrew.Send send4 = SendMsg;
-        GameObject databaseBody, databaseMechanics, databaseMotor, databaseOrders, databaseWiring, playerDatabase, player, ui;
-        public string serverIP = "Server IP ";
+        GameObject databaseBody, databaseMechanics, databaseMotor, databaseOrders, databaseWiring, playerDatabase, player, playerPref, ui;
+        Player[] players = new Player[16];
         Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         public override void MenuOnLoad()
         {
             AssetBundle ab = ModAssets.LoadBundle(this, "multiplayer");
-             ;
-
             ui = GameObject.Instantiate(ab.LoadAsset("UIPrefab.prefab") as GameObject);
+            playerPref = ab.LoadAsset("Player.prefab") as GameObject;
             ab.Unload(false);
             ui.transform.position = new Vector3(Screen.width, Screen.height, 0);
             ui.transform.SetParent(ModLoader.UICanvas.transform);
             ui.transform.localScale = new Vector3(1, 1, 1);
             ui.transform.GetChild(0).GetComponent<Button>().onClick.AddListener(Connect);
             
-            socket.SendTimeout = 3000;
-            socket.ReceiveTimeout = 3000;
-            //ModLoader.GetModAssetsFolder(new Multiplayer(),true);
-            //style.fontSize = 0;
-            //style.fontStyle = GameObject.Find("Buttons").transform.GetChild(0).GetChild(0).GetComponent<TextMesh>().fontStyle;
+            socket.SendTimeout = 0;
+            socket.ReceiveTimeout = 0;
+
+            //GameObject.Find("")
 
         }
         public override void MenuUpdate()
@@ -70,17 +68,35 @@ namespace Multiplayer
             catch (SocketException) { ui.transform.GetChild(2).GetComponent<Text>().text = "Connection failed!"; }
             if (!socket.Connected) ui.transform.GetChild(2).GetComponent<Text>().text = "Connection failed!";
             else ui.transform.GetChild(2).GetComponent<Text>().text = "Сonnection successful!";
-            short i = 0;
-
-            socket.Send(BitConverter.GetBytes(i));
-            socket.Send(Encoding.UTF8.GetBytes("aboba"));
-
-
+            socket.Send(ByteConvertor.Convert("aboba"));
+            byte[] buff = new byte[0];
+            socket.Receive(buff, 1, 0);
+            id = buff[0];
+            socket.Receive(buff, 1, 0);
+            int count = buff[0];
+            for (int i=0; i < count; i ++)
+            {
+                socket.Receive(buff, 21, 0);
+                players[buff[0]] = new Player();
+                players[buff[0]].name = BitConverter.ToString(buff, 1);
+               // players[buff[0]].player = GameObject.Instantiate(playerPref);
+            }
+            socket.Blocking = false;
         }
+        Handler handler = new Handler();
         public override void PreLoad()
         {
-            ui.SetActive(false);
+            handler.playerPref = playerPref;
+            handler.players = players;
+            handler.socket = socket;
+            
+
             UnityEngine.Object.Destroy(ui);
+            foreach (Player player in players)
+            {
+                if(player != null) player.player = GameObject.Instantiate(playerPref);
+            }
+            Thread myThread = new Thread(new ThreadStart(handler.Reading));
             GameObject carParts = GameObject.Find("CARPARTS");
             PlayMakerFSM[] objs = carParts.transform.GetComponentsInChildren<PlayMakerFSM>(true);
             bolts = new List<Bolt>();
@@ -157,12 +173,8 @@ namespace Multiplayer
         }
         public override void FixedUpdate()
         {
-            short i = 1;
-            socket.Send(BitConverter.GetBytes(i));
-            socket.Send(BitConverter.GetBytes(player.transform.position.x));
-            socket.Send(BitConverter.GetBytes(player.transform.position.y));
-            socket.Send(BitConverter.GetBytes(player.transform.position.z));
-            socket.Send(BitConverter.GetBytes(player.transform.rotation.eulerAngles.y));
+            
+            socket.Send(ByteConvertor.Convert(player.transform.position, player.transform.rotation.eulerAngles.y, id));
         }
         public override void OnLoad()
         {
@@ -269,7 +281,7 @@ namespace Multiplayer
                 
                 Parsing1(databaseMotor, "Remove part", "Assemble", i, "Wait", "Trigger", "Check for Part collision");
             }
-            Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", 25);
+            //Parsing2(databaseMotor, "Remove part", "Assemble", "Trigger", 25);
             
             for (int i = 26; i <= 29; i++)
             {
@@ -296,7 +308,7 @@ namespace Multiplayer
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").GetState(stateName3).Transitions = transition;
 
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").Initialize();
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(send, parts.Count));
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(socket, parts.Count));
             part.removeEvent = "REMOVE";
             part.remove = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").SendEvent;
 
@@ -313,7 +325,7 @@ namespace Multiplayer
             part.gameObj = database.transform.GetChild(ino).gameObject;
             
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").Initialize();
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(send, parts.Count));
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(socket, parts.Count));
             part.remove = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").SendEvent;
             part.removeEvent = "REMOVE";
 
@@ -342,7 +354,7 @@ namespace Multiplayer
             GameObject temp = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value;
             
             temp.transform.GetChild(temp.transform.childCount-1).GetPlayMakerFSM("Removal").Initialize();
-            temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(send, parts.Count));
+            temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(socket, parts.Count));
             part.remove = temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").SendEvent;
             part.removeEvent = "REMOVE";
 
@@ -366,7 +378,7 @@ namespace Multiplayer
 
         public override void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Home)) parts[2].Assemble();
+            //if (Input.GetKeyDown(KeyCode.Home)) parts[2].Assemble();
         }
     }
 }
