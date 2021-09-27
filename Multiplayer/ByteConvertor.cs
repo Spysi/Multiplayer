@@ -1,7 +1,7 @@
-﻿using UnityEngine;
-using System;
-using System.Text;
+﻿using System;
 using System.Collections.Generic;
+using System.Text;
+using UnityEngine;
 namespace Multiplayer
 {
     static class ByteConvertor

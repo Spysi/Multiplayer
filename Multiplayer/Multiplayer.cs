@@ -1,14 +1,12 @@
-﻿using MSCLoader.Helper;
-using UnityEngine;
-using HutongGames.PlayMaker;
-using System;
-using System.Text;
-using System.Collections.Generic;
-using HutongGames.PlayMaker.Actions;
+﻿using HutongGames.PlayMaker;
 using MSCLoader;
+using MSCLoader.Helper;
+using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
-using UnityEngine.UI;
 using System.Threading;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace Multiplayer
 {
@@ -180,7 +178,7 @@ namespace Multiplayer
         {
             while (true)
             {
-                
+
                 Thread.Sleep(16);
                 socket.Send(ByteConvertor.Convert(player.transform.position, player.transform.rotation.eulerAngles.y, id));
                 byte[] buffer = new byte[150];
@@ -217,7 +215,7 @@ namespace Multiplayer
         }
         public override void OnLoad()
         {
-            
+
             player = GameObject.Find("PLAYER");
             databaseBody = GameObject.Find("DatabaseBody");
             databaseMechanics = GameObject.Find("DatabaseMechanics");
