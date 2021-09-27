@@ -53,7 +53,6 @@
   <ItemGroup>
     <Compile Include="Bolt.cs" />
     <Compile Include="ByteConvertor.cs" />
-    <Compile Include="Handler.cs" />
     <Compile Include="Part.cs" />
     <Compile Include="Multiplayer.cs" />
     <Compile Include="Player.cs" />
