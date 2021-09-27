@@ -92,14 +92,8 @@ namespace Multiplayer
 
             socket.Blocking = false;
         }
-        Handler handler = new Handler();
         public override void PreLoad()
         {
-            handler.playerPref = playerPref;
-            handler.players = players;
-            handler.socket = socket;
-
-
             UnityEngine.Object.Destroy(ui);
             foreach (Player player in players)
             {
