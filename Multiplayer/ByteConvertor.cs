@@ -6,7 +6,7 @@ namespace Multiplayer
 {
     static class ByteConvertor
     {
-        public static byte[] Convert(Vector3 vector, float rotation, byte id)
+        public static byte[] Transform(Vector3 vector, float rotation, byte id)
         {
             List<byte> msg = new List<byte>();
             byte b = 3;
@@ -19,7 +19,7 @@ namespace Multiplayer
             return msg.ToArray();
         }
 
-        public static byte[] Convert(string name)
+        public static byte[] Name(string name)
         {
             List<byte> msg = new List<byte>();
             byte b = 0;
@@ -27,5 +27,7 @@ namespace Multiplayer
             msg.AddRange(Encoding.UTF8.GetBytes(name));
             return msg.ToArray();
         }
+
+        
     }
 }

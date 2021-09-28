@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Text;
 
 namespace Multiplayer
 {
@@ -28,6 +29,7 @@ namespace Multiplayer
         }
         private List<Part> parts;
         private List<Bolt> bolts;
+        private List<GameObject> objs;
         public byte id;
         //static RemovePart.Send send = SendMsg;
         static Screw.Send send3 = SendMsg;
@@ -64,38 +66,29 @@ namespace Multiplayer
             try
             {
                 socket.Connect(System.Net.IPAddress.Parse(ui.transform.GetChild(1).GetComponent<InputField>().text), 25565);
+                socket.Send(Encoding.UTF8.GetBytes("aboba               "));
+                byte[] buff = new byte[21];
+                socket.Receive(buff, 1, 0);
+                id = buff[0];
+                socket.Receive(buff, 1, 0);
+                int count = buff[0];
+                for (int i = 0; i < count; i++)
+                {
+                    socket.Receive(buff, 21, 0);
+                    players[buff[0]] = new Player();
+                    players[buff[0]].name = Encoding.UTF8.GetString(buff, 1,20);
+                    ModConsole.Log(players[buff[0]].name);
+                }
+                if (!socket.Connected) ui.transform.GetChild(2).GetComponent<Text>().text = "Connection failed!";
+                else ui.transform.GetChild(2).GetComponent<Text>().text = "Сonnection successful!";
             }
             catch (SocketException) { ui.transform.GetChild(2).GetComponent<Text>().text = "Connection failed!"; }
-            if (!socket.Connected) ui.transform.GetChild(2).GetComponent<Text>().text = "Connection failed!";
-            else ui.transform.GetChild(2).GetComponent<Text>().text = "Сonnection successful!";
-            ModConsole.Log("amogus");
-            socket.Send(ByteConvertor.Convert("aboba"));
-            ModConsole.Log("amogus");
-            byte[] buff = new byte[25];
-            socket.Receive(buff, 1, 0);
-            id = buff[0];
-            ModConsole.Log("amogus");
-            ModConsole.Log(buff[0]);
-            socket.Receive(buff, 1, 0);
-            int count = buff[0];
-            ModConsole.Log(buff[0]);
-            for (int i = 0; i < count; i++)
-            {
-                socket.Receive(buff, 21, 0);
-                players[buff[0]] = new Player();
-                players[buff[0]].name = BitConverter.ToString(buff, 1);
-                ModConsole.Log(players[buff[0]].name);
-                // players[buff[0]].player = GameObject.Instantiate(playerPref);
-            }
-
-            socket.Blocking = false;
         }
         public override void PreLoad()
         {
             UnityEngine.Object.Destroy(ui);
             foreach (Player player in players)
             {
-                //ModConsole.Log("aboba");
                 if (player != null) player.player = GameObject.Instantiate(playerPref);
             }
 
@@ -174,17 +167,7 @@ namespace Multiplayer
 
             }
         }
-        public override void FixedUpdate()
-        {
-            foreach (Player player in players)
-            {
-                if (player != null)
-                {
-                    player.player.transform.position = player.position;
-                    player.player.transform.rotation = player.rotation;
-                }
-            }
-        }
+        
         public override void OnLoad()
         {
 
@@ -306,6 +289,73 @@ namespace Multiplayer
             //myThread.Start();
 
         }
+
+        public override void PostLoad()
+        {
+            Thread t = new Thread(new ThreadStart(Updater));
+            t.Start();
+        }
+
+        void Updater()
+        {
+            while (true)
+            {
+                Thread.Sleep(20);
+                socket.Send(ByteConvertor.Transform(player.transform.position, player.transform.rotation.eulerAngles.y, id));
+                byte[] buffer = new byte[1];
+
+                while (socket.Available > 0)
+                {
+                    socket.Receive(buffer, 1, 0);
+                    byte[] buff = new byte[25];
+                    switch (buffer[0])
+                    {
+                        case 0:
+                            socket.Receive(buff, 21, 0);
+                            players[buff[0]] = new Player();
+                            players[buff[0]].name = Encoding.UTF8.GetString(buff, 1, 20);
+                            players[buff[0]].player = GameObject.Instantiate(playerPref);
+                            break;
+                        case 1:
+                            socket.Receive(buff, 1, 0);
+                            GameObject.Destroy(players[buff[0]].player);
+                            players[buff[0]] = null;
+                            break;
+                        case 3:
+                            socket.Receive(buff, 17, 0);
+                            byte tempid = buff[0];
+                            float x = BitConverter.ToSingle(buff, 1);
+                            float y = BitConverter.ToSingle(buff, 5);
+                            float z = BitConverter.ToSingle(buff, 9);
+                            float rot = BitConverter.ToSingle(buff, 13);
+                            lock (players[tempid])
+                            {
+                                players[tempid].rotation = Quaternion.Euler(0, rot, 0);
+                                players[tempid].position = new Vector3(x, y, z);
+                            }
+                            break;
+                        case 4:
+                            break;
+                        default:
+                            ModConsole.Log("Aboba");
+                            break;
+
+                    }
+                }
+            }
+        }
+
+        public override void FixedUpdate()
+        {
+            foreach (Player player in players)
+            {
+                if (player != null)
+                {
+                    player.player.transform.position = player.position;
+                    player.player.transform.rotation = player.rotation;
+                }
+            }
+        }
         private void Parsing1(GameObject database, string stateName, string stateName2, int ino, string nameToState, string triggerName, string stateName3)
         {
             Part part = new Part();
@@ -388,51 +438,8 @@ namespace Multiplayer
             parts.Add(part);
         }
 
-        public override void PostLoad()
-        {
-            Thread t = new Thread(new ThreadStart(Updater));
-            t.Start();
-        }
-        void Updater()
-        {
-            while (true)
-            {
-                Thread.Sleep(20);
-                socket.Send(ByteConvertor.Convert(player.transform.position, player.transform.rotation.eulerAngles.y, id));
-                byte[] buffer = new byte[1];
-
-                while (socket.Available > 0)
-                {
-                    socket.Receive(buffer, 1, 0);
-                    byte[] buff = new byte[25];
-                    switch (buffer[0])
-                    {
-                        case 0:
-                            socket.Receive(buff, 21, 0);
-                            players[buff[0]] = new Player();
-                            players[buff[0]].name = BitConverter.ToString(buff, 1);
-                            players[buff[0]].player = GameObject.Instantiate(playerPref);
-                            break;
-                        case 3:
-                            socket.Receive(buff, 17, 0);
-                            byte tempid = buff[0];
-                            float x = BitConverter.ToSingle(buff, 1);
-                            float y = BitConverter.ToSingle(buff, 5);
-                            float z = BitConverter.ToSingle(buff, 9);
-                            float rot = BitConverter.ToSingle(buff, 13);
-                            lock (players[tempid])
-                            {
-                                players[tempid].rotation = new Quaternion(0, rot, 0, 0);
-                                players[tempid].position = new Vector3(x, y, z);
-                            }
-                            break;
-                        default:
-                            ModConsole.Log("Aboba");
-                            break;
-                    }
-                }
-            }
-        }
+        
+        
 
 
 
