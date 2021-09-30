@@ -8,6 +8,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Text;
+using System.Linq;
 
 namespace Multiplayer
 {
@@ -29,14 +30,19 @@ namespace Multiplayer
         }
         private List<Part> parts;
         private List<Bolt> bolts;
-        private List<GameObject> objs;
+        private List<GameObject> items;
         public byte id;
         //static RemovePart.Send send = SendMsg;
         static Screw.Send send3 = SendMsg;
         static UnScrew.Send send4 = SendMsg;
-        GameObject databaseBody, databaseMechanics, databaseMotor, databaseOrders, databaseWiring, playerDatabase, player, playerPref, ui;
+        GameObject databaseBody, databaseMechanics, databaseMotor, databaseOrders, databaseWiring, playerDatabase, player, playerPref, ui, itemPivod;
         Player[] players = new Player[16];
         Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        FsmGameObject playerItem;
+        private Queue<Item> queueItems = new Queue<Item>();
+
+
+        PlayMakerFSM pickUp;
         public override void MenuOnLoad()
         {
             AssetBundle ab = ModAssets.LoadBundle(this, "multiplayer");
@@ -50,15 +56,7 @@ namespace Multiplayer
 
             socket.SendTimeout = 5000;
             socket.ReceiveTimeout = 5000;
-
-            //GameObject.Find("")
-
         }
-        public override void MenuUpdate()
-        {
-            //if (socket.Poll(-1, SelectMode.SelectError)) Console.WriteLine("This Socket has an error.");
-        }
-
 
         private void Connect()
         {
@@ -76,7 +74,7 @@ namespace Multiplayer
                 {
                     socket.Receive(buff, 21, 0);
                     players[buff[0]] = new Player();
-                    players[buff[0]].name = Encoding.UTF8.GetString(buff, 1,20);
+                    players[buff[0]].name = Encoding.UTF8.GetString(buff, 1, 20);
                     ModConsole.Log(players[buff[0]].name);
                 }
                 if (!socket.Connected) ui.transform.GetChild(2).GetComponent<Text>().text = "Connection failed!";
@@ -86,12 +84,12 @@ namespace Multiplayer
         }
         public override void PreLoad()
         {
+
             UnityEngine.Object.Destroy(ui);
             foreach (Player player in players)
             {
                 if (player != null) player.player = GameObject.Instantiate(playerPref);
             }
-
 
             GameObject carParts = GameObject.Find("CARPARTS");
             PlayMakerFSM[] objs = carParts.transform.GetComponentsInChildren<PlayMakerFSM>(true);
@@ -167,11 +165,18 @@ namespace Multiplayer
 
             }
         }
-        
+
         public override void OnLoad()
         {
+            items = new List<GameObject>();
+            items.AddRange(Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.tag == "PART"));
 
             player = GameObject.Find("PLAYER");
+            itemPivod = player.transform.GetChild(3).GetChild(0).GetChild(0).GetChild(0).GetChild(1).GetChild(0).gameObject;
+            pickUp = player.transform.GetChild(3).GetChild(0).GetChild(0).GetChild(0).GetChild(1).GetChild(2).gameObject.GetPlayMakerFSM("PickUp");
+            pickUp.InsertAction("Part picked", 0, new PickUp(socket));
+            pickUp.InsertAction("Drop part", 0, new Drop(socket));
+            playerItem = pickUp.FsmVariables.GetFsmGameObject("PickedObject");
             databaseBody = GameObject.Find("DatabaseBody");
             databaseMechanics = GameObject.Find("DatabaseMechanics");
             databaseMotor = GameObject.Find("DatabaseMotor");
@@ -179,6 +184,7 @@ namespace Multiplayer
             databaseWiring = GameObject.Find("DatabaseWiring");
             playerDatabase = GameObject.Find("PlayerDatabase");
             parts = new List<Part>();
+
 
             //databaseBody
 
@@ -298,16 +304,23 @@ namespace Multiplayer
 
         void Updater()
         {
+            //GameObject temp = pickUp.FsmVariables.GetFsmGameObject("RaycastHitObject").Value;
             while (true)
             {
                 Thread.Sleep(20);
                 socket.Send(ByteConvertor.Transform(player.transform.position, player.transform.rotation.eulerAngles.y, id));
-                byte[] buffer = new byte[1];
-
+                if (playerItem.Value != null)
+                {
+                    socket.Send(ByteConvertor.Item(playerItem.Value.transform.position, playerItem.Value.transform.rotation, playerItem.Value.GetInstanceID()));
+                }
+                byte[] buffer = new byte[3];
+                float x, y, z;
+                Item item = new Item();
                 while (socket.Available > 0)
                 {
                     socket.Receive(buffer, 1, 0);
-                    byte[] buff = new byte[25];
+                    byte[] buff = new byte[30];
+
                     switch (buffer[0])
                     {
                         case 0:
@@ -323,18 +336,69 @@ namespace Multiplayer
                             break;
                         case 3:
                             socket.Receive(buff, 17, 0);
-                            byte tempid = buff[0];
-                            float x = BitConverter.ToSingle(buff, 1);
-                            float y = BitConverter.ToSingle(buff, 5);
-                            float z = BitConverter.ToSingle(buff, 9);
+                            x = BitConverter.ToSingle(buff, 1);
+                            y = BitConverter.ToSingle(buff, 5);
+                            z = BitConverter.ToSingle(buff, 9);
                             float rot = BitConverter.ToSingle(buff, 13);
-                            lock (players[tempid])
+                            lock (players[buff[0]])
                             {
-                                players[tempid].rotation = Quaternion.Euler(0, rot, 0);
-                                players[tempid].position = new Vector3(x, y, z);
+                                players[buff[0]].rotation = Quaternion.Euler(0, rot, 0);
+                                players[buff[0]].position = new Vector3(x, y + 0.6f, z);
                             }
                             break;
+
                         case 4:
+                            try
+                            {
+                                socket.Receive(buff, 28, 0);
+                                //ModConsole.Log(BitConverter.ToInt32(buff, 0));
+                                item.item = items.Find(obj => obj.GetInstanceID() == BitConverter.ToInt32(buff, 0));
+                                
+                                //ModConsole.Log(item.name);
+                                x = BitConverter.ToSingle(buff, 4);
+                                y = BitConverter.ToSingle(buff, 8);
+                                z = BitConverter.ToSingle(buff, 12);
+                                item.position = new Vector3(x, y, z);
+                                x = BitConverter.ToSingle(buff, 16);
+                                y = BitConverter.ToSingle(buff, 20);
+                                z = BitConverter.ToSingle(buff, 24);
+                                item.rotation = Quaternion.Euler(x, y, z);
+                                queueItems.Enqueue(item);
+                            }
+                            catch (NullReferenceException)
+                            {
+                                ModConsole.Log("Aboba");
+                            }
+                            break;
+                        case 5:
+                            try
+                            {
+                                socket.Receive(buff, 4, 0);
+                                //ModConsole.Log(BitConverter.ToInt32(buff, 0));
+                                item.item = items.Find(obj => obj.GetInstanceID() == BitConverter.ToInt32(buff, 0));
+                                item.item.GetComponent<Rigidbody>().isKinematic = true;
+                                item.item.GetComponent<Rigidbody>().useGravity = false;
+                            }
+                            catch (NullReferenceException)
+                            {
+                                ModConsole.Log("Aboba");
+                            }
+                            break;
+                        case 6:
+                            
+                            try
+                            {
+                                socket.Receive(buff, 4, 0);
+                                //ModConsole.Log(BitConverter.ToInt32(buff, 0));
+
+                                item.item = items.Find(obj => obj.GetInstanceID() == BitConverter.ToInt32(buff, 0));
+                                item.item.GetComponent<Rigidbody>().isKinematic = false;
+                                item.item.GetComponent<Rigidbody>().useGravity = true;
+                            }
+                            catch (NullReferenceException)
+                            {
+                                ModConsole.Log("Aboba");
+                            }
                             break;
                         default:
                             ModConsole.Log("Aboba");
@@ -354,7 +418,16 @@ namespace Multiplayer
                     player.player.transform.position = player.position;
                     player.player.transform.rotation = player.rotation;
                 }
+
             }
+            while (queueItems.Count > 0)
+            {
+                Item temp = queueItems.Dequeue();
+                temp.item.transform.position = temp.position;
+                temp.item.transform.rotation = temp.rotation;
+            }
+
+
         }
         private void Parsing1(GameObject database, string stateName, string stateName2, int ino, string nameToState, string triggerName, string stateName3)
         {
@@ -438,8 +511,8 @@ namespace Multiplayer
             parts.Add(part);
         }
 
-        
-        
+
+
 
 
 

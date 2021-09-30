@@ -39,6 +39,36 @@ namespace Multiplayer
         }
     }
 
+    class PickUp : FsmStateAction
+    {
+        //public delegate void Send(int id, int doi);
+        Socket send;
+        
+        //public ref bool isPicked;
+        public PickUp(Socket socket) { send = socket;}
+
+        public override void OnEnter()
+        {
+            send.Send(ByteConvertor.PickUp(Fsm.Variables.GetFsmGameObject("RaycastHitObject").Value.GetInstanceID()));
+            Finish();
+        }
+    }
+
+    class Drop : FsmStateAction
+    {
+        //public delegate void Send(int id, int doi);
+        Socket send;
+
+        //public ref bool isPicked;
+        public Drop(Socket socket) { send = socket; }
+
+        public override void OnEnter()
+        {
+            send.Send(ByteConvertor.Drop(Fsm.Variables.GetFsmGameObject("RaycastHitObject").Value.GetInstanceID()));
+            Finish();
+        }
+    }
+
     class RemovePart : FsmStateAction
     {
         //public delegate void Send(int id, int doi);
