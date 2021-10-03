@@ -10,7 +10,8 @@ namespace Multiplayer
         public static byte[] Transform(Vector3 vector, float rotation, byte id)
         {
             List<byte> msg = new List<byte>();
-            byte b = 3;
+            byte b = 3, p = 18;
+            msg.Add(p);
             msg.Add(b);
             msg.Add(id);
             msg.AddRange(BitConverter.GetBytes(vector.x));
@@ -24,6 +25,7 @@ namespace Multiplayer
         {
             List<byte> msg = new List<byte>();
             byte b = 0;
+            msg.Add((byte)name.Length);
             msg.Add(b);
             msg.AddRange(Encoding.UTF8.GetBytes(name));
             return msg.ToArray();
@@ -32,7 +34,8 @@ namespace Multiplayer
         public static byte[] Item(Vector3 vector, Quaternion rotation, int idItem)//29
         {
             List<byte> msg = new List<byte>();
-            byte b = 4;
+            byte b = 4, p = 29;
+            msg.Add(p);
             msg.Add(b);
             msg.AddRange(BitConverter.GetBytes(idItem));
             msg.AddRange(BitConverter.GetBytes(vector.x));
@@ -47,7 +50,8 @@ namespace Multiplayer
         public static byte[] PickUp(int idItem)//4
         {
             List<byte> msg = new List<byte>();
-            byte b = 5;
+            byte b = 5, p = 5;
+            msg.Add(p);
             msg.Add(b);
             msg.AddRange(BitConverter.GetBytes(idItem));
             return msg.ToArray();
@@ -56,10 +60,34 @@ namespace Multiplayer
         public static byte[] Drop(int idItem)//4
         {
             List<byte> msg = new List<byte>();
-            byte b = 6;
+            byte b = 6, p = 5;
+            msg.Add(p);
             msg.Add(b);
             msg.AddRange(BitConverter.GetBytes(idItem));
             return msg.ToArray();
         }
+
+        public static byte[] Assembly(int idItem)//4
+        {
+            List<byte> msg = new List<byte>();
+            byte b = 7, p = 5;
+            msg.Add(p);
+            msg.Add(b);
+            msg.AddRange(BitConverter.GetBytes(idItem));
+            return msg.ToArray();
+        }
+
+        public static byte[] RemovePart(int idItem)//4
+        {
+            List<byte> msg = new List<byte>();
+            byte b = 8, p = 5;
+            msg.Add(p);
+            msg.Add(b);
+            msg.AddRange(BitConverter.GetBytes(idItem));
+            return msg.ToArray();
+        }
+
+
+        
     }
 }

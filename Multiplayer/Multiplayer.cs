@@ -40,6 +40,9 @@ namespace Multiplayer
         Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         FsmGameObject playerItem;
         private Queue<Item> queueItems = new Queue<Item>();
+        private Queue<Rigidbody> drop = new Queue<Rigidbody>();
+        private Queue<Rigidbody> up = new Queue<Rigidbody>();
+        private Queue<Part> assem = new Queue<Part>(), disassem = new Queue<Part>();
 
 
         PlayMakerFSM pickUp;
@@ -64,7 +67,9 @@ namespace Multiplayer
             try
             {
                 socket.Connect(System.Net.IPAddress.Parse(ui.transform.GetChild(1).GetComponent<InputField>().text), 25565);
-                socket.Send(Encoding.UTF8.GetBytes("aboba               "));
+                byte[] temp = { 5 };
+                socket.Send(temp);
+                socket.Send(Encoding.UTF8.GetBytes("aboba"));
                 byte[] buff = new byte[21];
                 socket.Receive(buff, 1, 0);
                 id = buff[0];
@@ -74,7 +79,7 @@ namespace Multiplayer
                 {
                     socket.Receive(buff, 21, 0);
                     players[buff[0]] = new Player();
-                    players[buff[0]].name = Encoding.UTF8.GetString(buff, 1, 20);
+                    players[buff[0]].name = Encoding.UTF8.GetString(buff, 1, 5);
                     ModConsole.Log(players[buff[0]].name);
                 }
                 if (!socket.Connected) ui.transform.GetChild(2).GetComponent<Text>().text = "Connection failed!";
@@ -190,9 +195,9 @@ namespace Multiplayer
 
             for (int i = 1; i <= 8; i++)
             {
-                Parsing1(databaseBody, "Remove part", "Assemble 2", i, "Wait", "Trigger", "Check for Part collision");
+                Parsing1(databaseBody, "Remove part", "Assemble 2", i, "Trigger");
             }
-            Parsing1(databaseBody, "Remove part", "Assemble", 9, "Wait", "Trigger", "Check for Part collision");
+            Parsing1(databaseBody, "Remove part", "Assemble", 9, "Trigger");
 
             Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 10);
             Parsing2(databaseBody, "Remove part", "Assemble", "SpawnPartLocation", 11);
@@ -214,10 +219,16 @@ namespace Multiplayer
 
             Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", 30);
 
-            for (int i = 31; i <= 35; i++)
+            for (int i = 31; i <= 32; i++)
             {
-                Parsing1(databaseBody, "Remove part", "Assemble 2", i, "Wait", "Trigger", "Check for Part collision");
+                Parsing1(databaseBody, "Remove part", "Assemble 2", i, "Trigger");
             }
+
+            for (int i = 33; i <= 34; i++)
+            {
+                Parsing1(databaseBody, "Remove part", "Assemble 2", i, "Trigger");
+            }
+            Parsing1(databaseBody, "Remove part", "Assemble 2", 35, "Trigger");
 
             Parsing2(databaseBody, "Remove part", "Assemble", "Trigger", 42);
 
@@ -231,68 +242,65 @@ namespace Multiplayer
 
             //databaseMechanics
 
-            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 0, "Wait", "Trigger", "Check for Part collision");
-            Parsing1(databaseMechanics, "Remove part", "Assemble", 1, "Wait", "Trigger", "Check for Part collision");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 0, "Trigger");
+            Parsing1(databaseMechanics, "Remove part", "Assemble", 1, "Trigger");
 
             for (int i = 2; i <= 5; i++)
             {
-                Parsing1(databaseMechanics, "Remove part", "Assemble 2", i, "Wait", "Trigger", "Check for Part collision");
+                Parsing1(databaseMechanics, "Remove part", "Assemble 2", i, "Trigger");
             }
             for (int i = 6; i <= 14; i++)
             {
                 Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i);
             }
 
-            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 15, "Wait", "Trigger", "Check for Part collision");
-            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 16, "Wait", "Trigger", "Check for Part collision");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 15, "Trigger");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 16, "Trigger");
 
             Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", 17);
 
-            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 18, "Wait", "Trigger", "Check for Part collision");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 18, "Trigger");
 
             for (int i = 19; i <= 21; i++)
             {
                 Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i);
             }
 
-            Parsing1(databaseMechanics, "Remove part", "Assemble", 22, "Wait", "Trigger", "Check for Part collision");
+            Parsing1(databaseMechanics, "Remove part", "Assemble", 22, "Trigger");
 
             for (int i = 23; i <= 25; i++)
             {
                 Parsing2(databaseMechanics, "Remove part", "Assemble", "Trigger", i);
             }
 
-            Parsing1(databaseMechanics, "Remove part", "Stock", 26, "Find correct part 3", "Trigger", "Check for Part collision");
-            Parsing1(databaseMechanics, "Remove part", "Assemble", 27, "Wait", "Trigger", "Check for Part collision");
-            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 28, "Wait 2", "Trigger", "Check for Part collision");
+            Parsing1(databaseMechanics, "Remove part", "Stock", 26, "Trigger");
+            Parsing1(databaseMechanics, "Remove part", "Assemble", 27, "Trigger");
+            Parsing1(databaseMechanics, "Remove part", "Assemble 2", 28, "Trigger");
 
             for (int i = 1; i <= 12; i++)
             {
 
-                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Wait", "Trigger", "Check for Part collision");
+                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Trigger");
             }
-            Parsing1(databaseMotor, "Remove part", "Assemble", 13, "Wait", "TriggerRacing", "Check for Part collision");
-            Parsing1(databaseMotor, "Remove part", "Assemble", 13, "Wait", "TriggerStock", "Check for Part collision");
+            Parsing1(databaseMotor, "Remove part", "Assemble", 13, "TriggerRacing");
+            Parsing1(databaseMotor, "Remove part", "Assemble", 13,"TriggerStock");
 
             for (int i = 14; i <= 24; i++)
             {
 
-                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Wait", "Trigger", "Check for Part collision");
+                Parsing1(databaseMotor, "Remove part", "Assemble", i,"Trigger");
             }
             //Parsing2(databaseMotor, "Remove part", "Assemble", "Trigger", 25);
 
             for (int i = 26; i <= 29; i++)
             {
-                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Wait", "Trigger", "Check for Part collision");
+                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Trigger");
             }
-            Parsing1(databaseMotor, "Remove part", "Assemble 2", 30, "Wait 2", "Trigger", "Check for Part ");
+            Parsing1(databaseMotor, "Remove part", "Assemble 2", 30, "Trigger");
             for (int i = 31; i <= 36; i++)
             {
-                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Wait", "Trigger", "Check for Part collision");
+                Parsing1(databaseMotor, "Remove part", "Assemble", i, "Trigger");
             }
-
-            // Thread myThread = new Thread(new ThreadStart(Reading));
-            //myThread.Start();
 
         }
 
@@ -300,11 +308,11 @@ namespace Multiplayer
         {
             Thread t = new Thread(new ThreadStart(Updater));
             t.Start();
+           
         }
 
         void Updater()
         {
-            //GameObject temp = pickUp.FsmVariables.GetFsmGameObject("RaycastHitObject").Value;
             while (true)
             {
                 Thread.Sleep(20);
@@ -320,7 +328,6 @@ namespace Multiplayer
                 {
                     socket.Receive(buffer, 1, 0);
                     byte[] buff = new byte[30];
-
                     switch (buffer[0])
                     {
                         case 0:
@@ -351,10 +358,8 @@ namespace Multiplayer
                             try
                             {
                                 socket.Receive(buff, 28, 0);
-                                //ModConsole.Log(BitConverter.ToInt32(buff, 0));
-                                item.item = items.Find(obj => obj.GetInstanceID() == BitConverter.ToInt32(buff, 0));
-                                
-                                //ModConsole.Log(item.name);
+                                int id = BitConverter.ToInt32(buff, 0);
+                                item.item = items.Find(obj => obj.GetInstanceID() == id);
                                 x = BitConverter.ToSingle(buff, 4);
                                 y = BitConverter.ToSingle(buff, 8);
                                 z = BitConverter.ToSingle(buff, 12);
@@ -367,41 +372,45 @@ namespace Multiplayer
                             }
                             catch (NullReferenceException)
                             {
-                                ModConsole.Log("Aboba");
+                                ModConsole.Log("Aboba1");
                             }
                             break;
                         case 5:
                             try
                             {
                                 socket.Receive(buff, 4, 0);
-                                //ModConsole.Log(BitConverter.ToInt32(buff, 0));
-                                item.item = items.Find(obj => obj.GetInstanceID() == BitConverter.ToInt32(buff, 0));
-                                item.item.GetComponent<Rigidbody>().isKinematic = true;
-                                item.item.GetComponent<Rigidbody>().useGravity = false;
+                                int id = BitConverter.ToInt32(buff, 0);
+                                item.item = items.Find(obj => obj.GetInstanceID() == id);
+                                up.Enqueue(item.item.GetComponent<Rigidbody>());
                             }
                             catch (NullReferenceException)
                             {
-                                ModConsole.Log("Aboba");
+                                ModConsole.Log("Aboba2");
                             }
                             break;
                         case 6:
-                            
                             try
                             {
                                 socket.Receive(buff, 4, 0);
-                                //ModConsole.Log(BitConverter.ToInt32(buff, 0));
-
-                                item.item = items.Find(obj => obj.GetInstanceID() == BitConverter.ToInt32(buff, 0));
-                                item.item.GetComponent<Rigidbody>().isKinematic = false;
-                                item.item.GetComponent<Rigidbody>().useGravity = true;
+                                int id = BitConverter.ToInt32(buff, 0);
+                                item.item = items.Find(obj => obj.GetInstanceID() == id);
+                                drop.Enqueue(item.item.GetComponent<Rigidbody>());
                             }
                             catch (NullReferenceException)
                             {
-                                ModConsole.Log("Aboba");
+                                ModConsole.Log("Aboba3");
                             }
                             break;
+                        case 7:
+                            socket.Receive(buff, 4, 0);
+                            assem.Enqueue(parts[BitConverter.ToInt32(buff, 0)]);
+                            break;
+                        case 8:
+                            socket.Receive(buff, 4, 0);
+                            disassem.Enqueue(parts[BitConverter.ToInt32(buff, 0)]);
+                            break;
                         default:
-                            ModConsole.Log("Aboba");
+                            ModConsole.Log("zopa polnaya");
                             break;
 
                     }
@@ -426,31 +435,60 @@ namespace Multiplayer
                 temp.item.transform.position = temp.position;
                 temp.item.transform.rotation = temp.rotation;
             }
+            while (up.Count > 0)
+            {
+                Rigidbody temp = up.Dequeue();
+                temp.isKinematic = true;
+                temp.useGravity = false;
+                MeshCollider[] temp2 = temp.gameObject.GetComponents<MeshCollider>();
+
+                foreach (MeshCollider tem in temp2)
+                {
+                    tem.enabled = false;
+                }
+                
+            }
+
+            while (drop.Count > 0)
+            {
+                Rigidbody temp = drop.Dequeue();
+                temp.isKinematic = false;
+                temp.useGravity = true;
+                MeshCollider[] temp2 = temp.gameObject.GetComponents<MeshCollider>();
+
+                foreach (MeshCollider tem in temp2)
+                {
+                    tem.enabled = true;
+                }
+            }
+
+            while (assem.Count > 0)
+            {
+                assem.Dequeue().Assemble();
+            }
+
+            while (disassem.Count > 0)
+            {
+                disassem.Dequeue().Remove();
+            }
 
 
         }
-        private void Parsing1(GameObject database, string stateName, string stateName2, int ino, string nameToState, string triggerName, string stateName3)
+        private void Parsing1(GameObject database, string stateName, string stateName2, int ino, string triggerName)
         {
             Part part = new Part();
             part.gameObj = database.transform.GetChild(ino).gameObject;
-            FsmTransition[] transition = new FsmTransition[3];
-            transition[2] = new FsmTransition();
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").Initialize();
-            transition[2].FsmEvent = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").FsmEvents[3];
-            transition[2].ToState = nameToState;
-            transition[1] = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").GetState(stateName3).Transitions[1];
-            transition[0] = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").GetState(stateName3).Transitions[0];
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").GetState(stateName3).Transitions = transition;
-
+            part.boo = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").FsmVariables.GetFsmBool("Setup");
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").Initialize();
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(socket, parts.Count));
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").InsertAction(stateName,0, new RemovePart(socket, parts.Count, part.boo));
             part.removeEvent = "REMOVE";
             part.remove = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").SendEvent;
 
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").AddAction(stateName2, new Assembly(socket, parts.Count));
-            part.assembleEvent = "DISASSEMBLE";
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").InsertAction(stateName2,0, new Assembly(socket, parts.Count));
+            part.assembleEvent = "ASSEMBLE";
             part.assemble = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").SendEvent;
-
+            
             parts.Add(part);
         }
 
@@ -460,7 +498,7 @@ namespace Multiplayer
             part.gameObj = database.transform.GetChild(ino).gameObject;
 
             part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").Initialize();
-            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(socket, parts.Count));
+            part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(socket, parts.Count, null));
             part.remove = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").SendEvent;
             part.removeEvent = "REMOVE";
 
@@ -489,7 +527,7 @@ namespace Multiplayer
             GameObject temp = part.gameObj.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value;
 
             temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").Initialize();
-            temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(socket, parts.Count));
+            temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(socket, parts.Count, null));
             part.remove = temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").SendEvent;
             part.removeEvent = "REMOVE";
 
