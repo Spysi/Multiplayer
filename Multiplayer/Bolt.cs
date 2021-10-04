@@ -1,4 +1,5 @@
 ﻿using HutongGames.PlayMaker;
+using System.Net.Sockets;
 
 namespace Multiplayer
 {
@@ -20,14 +21,14 @@ namespace Multiplayer
     class Screw : FsmStateAction
     {
         public delegate void Send(int id, int doi);
-        Send send;
-        public Screw(Send temp, int id1) { send = temp; id = id1; }
+        Socket send;
+        public Screw(Socket temp, int id1) { send = temp; id = id1; }
 
         public int id;
 
         public override void OnEnter()
         {
-            send(id, 3);
+            send.Send(ByteConvertor.Tingen(id));
             Finish();
         }
     }
@@ -35,14 +36,14 @@ namespace Multiplayer
     class UnScrew : FsmStateAction
     {
         public delegate void Send(int id, int doi);
-        Send send;
-        public UnScrew(Send temp, int id1) { send = temp; id = id1; }
+        Socket send;
+        public UnScrew(Socket temp, int id1) { send = temp; id = id1; }
 
         public int id;
 
         public override void OnEnter()
         {
-            send(id, 4);
+            send.Send(ByteConvertor.UnTingen(id));
             Finish();
         }
     }

@@ -1,7 +1,7 @@
 ﻿using HutongGames.PlayMaker;
-using System;
 using System.Net.Sockets;
 using UnityEngine;
+using MSCLoader;
 
 namespace Multiplayer
 {
@@ -13,15 +13,21 @@ namespace Multiplayer
         public delegate void Assembly(string eventName);
         public Assembly remove, assemble;
         public FsmBool boo;
-        public GameObject gameObj;
+        public GameObject gameObjDB;
+        public FsmGameObject part;
         public void Assemble()
         {
-            if(boo != null)
+            
+
+            if (boo != null)
             {
                 boo.Value = true;
             }
+            assemble("FINISHED");
             assemble(assembleEvent);
-            //assemble("FINISHED");
+            
+            
+            
             
         }
         public void Remove()
@@ -44,9 +50,10 @@ namespace Multiplayer
 
         public override void OnEnter()
         {
-
-            send.Send(ByteConvertor.Assembly(id));
-
+            send.Send(ByteConvertor.Assembly(id, Fsm.Variables.GetFsmGameObject("Part").Value.GetInstanceID()));
+            Fsm.Variables.GetFsmGameObject("Part").Value.transform.localPosition = new Vector3(0, 0, 0);
+            Fsm.Variables.GetFsmGameObject("Part").Value.transform.localRotation = new Quaternion(0, 0, 0, 1);
+            //ModConsole.Log(Fsm.Variables.GetFsmGameObject("Part").Value.name);
             Finish();
         }
     }
@@ -78,6 +85,7 @@ namespace Multiplayer
 
         public override void OnEnter()
         {
+            
             send.Send(ByteConvertor.PickUp(Fsm.Variables.GetFsmGameObject("PickedObject").Value.GetInstanceID()));
             Finish();
         }

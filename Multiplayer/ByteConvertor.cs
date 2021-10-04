@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-using MSCLoader;
+
 namespace Multiplayer
 {
     static class ByteConvertor
@@ -67,13 +67,14 @@ namespace Multiplayer
             return msg.ToArray();
         }
 
-        public static byte[] Assembly(int idItem)//4
+        public static byte[] Assembly(int idItem, int instId)//4
         {
             List<byte> msg = new List<byte>();
-            byte b = 7, p = 5;
+            byte b = 7, p = 9;
             msg.Add(p);
             msg.Add(b);
             msg.AddRange(BitConverter.GetBytes(idItem));
+            msg.AddRange(BitConverter.GetBytes(instId));
             return msg.ToArray();
         }
 
@@ -87,7 +88,26 @@ namespace Multiplayer
             return msg.ToArray();
         }
 
+        public static byte[] Tingen(int idBolt)
+        {
+            List<byte> msg = new List<byte>();
+            byte b = 9, p = 5;
+            msg.Add(p);
+            msg.Add(b);
+            msg.AddRange(BitConverter.GetBytes(idBolt));
+            return msg.ToArray();
+        }
 
-        
+        public static byte[] UnTingen(int idBolt)
+        {
+            List<byte> msg = new List<byte>();
+            byte b = 10, p = 5;
+            msg.Add(p);
+            msg.Add(b);
+            msg.AddRange(BitConverter.GetBytes(idBolt));
+            return msg.ToArray();
+        }
+
+
     }
 }
