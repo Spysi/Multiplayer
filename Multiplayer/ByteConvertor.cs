@@ -10,7 +10,7 @@ namespace Multiplayer
         public static byte[] Transform(Vector3 vector, float rotation, byte id)
         {
             List<byte> msg = new List<byte>();
-            byte b = 3, p = 18;
+            const byte b = 3, p = 18;
             msg.Add(p);
             msg.Add(b);
             msg.Add(id);
@@ -24,7 +24,7 @@ namespace Multiplayer
         public static byte[] Name(string name)
         {
             List<byte> msg = new List<byte>();
-            byte b = 0;
+            const byte b = 0;
             msg.Add((byte)name.Length);
             msg.Add(b);
             msg.AddRange(Encoding.UTF8.GetBytes(name));
@@ -34,7 +34,7 @@ namespace Multiplayer
         public static byte[] Item(Vector3 vector, Quaternion rotation, int idItem)//29
         {
             List<byte> msg = new List<byte>();
-            byte b = 4, p = 29;
+            const byte b = 4, p = 29;
             msg.Add(p);
             msg.Add(b);
             msg.AddRange(BitConverter.GetBytes(idItem));
@@ -47,30 +47,20 @@ namespace Multiplayer
             return msg.ToArray();
         }
 
-        public static byte[] PickUp(int idItem)//4
+        public static byte[] PickUp(int idItem, bool isPickUp)//4
         {
             List<byte> msg = new List<byte>();
-            byte b = 5, p = 5;
+            const byte b = 5, p = 6;
             msg.Add(p);
             msg.Add(b);
             msg.AddRange(BitConverter.GetBytes(idItem));
+            msg.AddRange(BitConverter.GetBytes(isPickUp));
             return msg.ToArray();
         }
-
-        public static byte[] Drop(int idItem)//4
-        {
-            List<byte> msg = new List<byte>();
-            byte b = 6, p = 5;
-            msg.Add(p);
-            msg.Add(b);
-            msg.AddRange(BitConverter.GetBytes(idItem));
-            return msg.ToArray();
-        }
-
         public static byte[] Assembly(int idItem, int instId)//4
         {
             List<byte> msg = new List<byte>();
-            byte b = 7, p = 9;
+            const byte b = 6, p = 9;
             msg.Add(p);
             msg.Add(b);
             msg.AddRange(BitConverter.GetBytes(idItem));
@@ -81,30 +71,29 @@ namespace Multiplayer
         public static byte[] RemovePart(int idItem)//4
         {
             List<byte> msg = new List<byte>();
-            byte b = 8, p = 5;
+            const byte b = 7, p = 5;
             msg.Add(p);
             msg.Add(b);
             msg.AddRange(BitConverter.GetBytes(idItem));
             return msg.ToArray();
         }
 
-        public static byte[] Tingen(int idBolt)
+        public static byte[] Tingen(int idBolt,bool isTingen)
         {
             List<byte> msg = new List<byte>();
-            byte b = 9, p = 5;
+            const byte b = 8, p = 6;
             msg.Add(p);
             msg.Add(b);
+            msg.AddRange(BitConverter.GetBytes(isTingen));
             msg.AddRange(BitConverter.GetBytes(idBolt));
             return msg.ToArray();
         }
-
-        public static byte[] UnTingen(int idBolt)
+        public static byte[] RecalculateID()
         {
             List<byte> msg = new List<byte>();
-            byte b = 10, p = 5;
+            const byte b = 9, p = 1;
             msg.Add(p);
             msg.Add(b);
-            msg.AddRange(BitConverter.GetBytes(idBolt));
             return msg.ToArray();
         }
 

@@ -22,13 +22,12 @@ namespace Multiplayer
     {
         public delegate void Send(int id, int doi);
         Socket send;
-        public Screw(Socket temp, int id1) { send = temp; id = id1; }
-
-        public int id;
-
+        public Screw(Socket send, int id) { this.send = send; this.id = id; }
+        int id;
         public override void OnEnter()
         {
-            send.Send(ByteConvertor.Tingen(id));
+            if (!Fsm.Variables.BoolVariables[0].Value) send.Send(ByteConvertor.Tingen(id, true));
+            else Fsm.Variables.BoolVariables[0].Value = false;
             Finish();
         }
     }
@@ -37,13 +36,12 @@ namespace Multiplayer
     {
         public delegate void Send(int id, int doi);
         Socket send;
-        public UnScrew(Socket temp, int id1) { send = temp; id = id1; }
-
-        public int id;
-
+        public UnScrew(Socket send, int id) { this.send = send; this.id = id;}
+        int id;
         public override void OnEnter()
         {
-            send.Send(ByteConvertor.UnTingen(id));
+            if (!Fsm.Variables.BoolVariables[0].Value) send.Send(ByteConvertor.Tingen(id, false));
+            else Fsm.Variables.BoolVariables[0].Value = false;
             Finish();
         }
     }
