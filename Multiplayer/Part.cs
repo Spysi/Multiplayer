@@ -1,14 +1,9 @@
 ﻿using HutongGames.PlayMaker;
 using MSCLoader;
-using MSCLoader.Helper;
-using System;
-using System.Collections.Generic;
-using System.Net.Sockets;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.UI;
-using System.Text;
 using System.Linq;
+
 namespace Multiplayer
 {
     class Part
@@ -43,24 +38,19 @@ namespace Multiplayer
 
     class Assembly : FsmStateAction
     {
-        //public delegate void Send(int id, int doi);
-        Socket send;
-        public Assembly(Socket socket, int id1) { send = socket; id = id1; }
+        public Assembly(int id) {this.id = id; }
 
         public int id;
         public override void OnEnter()
         {
-            send.Send(ByteConvertor.Assembly(id, Fsm.Variables.GetFsmGameObject("Part").Value.GetInstanceID()));
-            //gamobj.Enqueue(Fsm.Variables.GetFsmGameObject("Part").Value);
+            Multiplayer.socket.Send(ByteConvertor.Assembly(id, Multiplayer.items.IndexOf(Fsm.Variables.GetFsmGameObject("Part").Value)));
             Finish();
         }
     }
 
     class RemovePart : FsmStateAction
     {
-        //public delegate void Send(int id, int doi);
-        Socket send;
-        public RemovePart(Socket socket, int id1, FsmBool boo) { send = socket; id = id1; this.boo = boo; }
+        public RemovePart(int id, FsmBool boo) { this.id = id; this.boo = boo; }
 
         public int id;
         public FsmBool boo;
@@ -68,14 +58,13 @@ namespace Multiplayer
         public override void OnEnter()
         {
             if (boo != null) boo.Value = false;
-            send.Send(ByteConvertor.RemovePart(id));
+            Multiplayer.socket.Send(ByteConvertor.RemovePart(id));
             Finish();
         }
     }
 
     class FixPos : FsmStateAction
     {
-        public Queue<GameObject> temp = new Queue<GameObject>();
         public override void OnEnter()
         {
             Thread t = new Thread(new ThreadStart(Fix));
@@ -86,51 +75,41 @@ namespace Multiplayer
         void Fix()
         {
             Thread.Sleep(200);
-            temp.Enqueue(Fsm.Variables.GetFsmGameObject("Part").Value);
+           Multiplayer.setZeroTransform.Enqueue(Fsm.Variables.GetFsmGameObject("Part").Value);
         }
     }
 
     class PickUp : FsmStateAction
     {
-        //public delegate void Send(int id, int doi);
-        Socket send;
-        public List<GameObject> items;
-        //public ref bool isPicked;
-        public PickUp(Socket socket) { send = socket; }
-
         public override void OnEnter()
         {
-            int id = items.IndexOf(Fsm.Variables.GetFsmGameObject("PickedObject").Value);
+            int id = Multiplayer.items.IndexOf(Fsm.Variables.GetFsmGameObject("PickedObject").Value);
             if (id == -1) {
-                items.Clear();
-                items.AddRange(Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.tag == "PART"));
-                id = items.IndexOf(Fsm.Variables.GetFsmGameObject("PickedObject").Value);
-                send.Send(ByteConvertor.RecalculateID());
+                ModConsole.Log("memem2");
+                Multiplayer.items.Clear();
+                Multiplayer.items.AddRange(Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.tag == "PART"));
+                id = Multiplayer.items.IndexOf(Fsm.Variables.GetFsmGameObject("PickedObject").Value);
+                Multiplayer.socket.Send(ByteConvertor.RecalculateID());
             }
-            send.Send(ByteConvertor.PickUp(id, true));
+            Multiplayer.socket.Send(ByteConvertor.PickUp(id, true));
             Finish();
         }
     }
 
     class Drop : FsmStateAction
     {
-        //public delegate void Send(int id, int doi);
-        Socket send;
-        public List<GameObject> items;
-        //public ref bool isPicked;
-        public Drop(Socket socket) { send = socket; }
-
         public override void OnEnter()
         {
-            int id = items.IndexOf(Fsm.Variables.GetFsmGameObject("PickedObject").Value);
+            int id = Multiplayer.items.IndexOf(Fsm.Variables.GetFsmGameObject("PickedObject").Value);
             if (id == -1)
             {
-                items.Clear();
-                items.AddRange(Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.tag == "PART"));
-                id = items.IndexOf(Fsm.Variables.GetFsmGameObject("PickedObject").Value);
-                send.Send(ByteConvertor.RecalculateID());
+                ModConsole.Log("memem3");
+                Multiplayer.items.Clear();
+                Multiplayer.items.AddRange(Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.tag == "PART"));
+                id = Multiplayer.items.IndexOf(Fsm.Variables.GetFsmGameObject("PickedObject").Value);
+                Multiplayer.socket.Send(ByteConvertor.RecalculateID());
             }
-            send.Send(ByteConvertor.PickUp(id, false));
+            Multiplayer.socket.Send(ByteConvertor.PickUp(id, false));
             Finish();
         }
     }

@@ -20,13 +20,11 @@ namespace Multiplayer
 
     class Screw : FsmStateAction
     {
-        public delegate void Send(int id, int doi);
-        Socket send;
-        public Screw(Socket send, int id) { this.send = send; this.id = id; }
+        public Screw(int id) {this.id = id; }
         int id;
         public override void OnEnter()
         {
-            if (!Fsm.Variables.BoolVariables[0].Value) send.Send(ByteConvertor.Tingen(id, true));
+            if (!Fsm.Variables.BoolVariables[0].Value) Multiplayer.socket.Send(ByteConvertor.Tingen(id, true));
             else Fsm.Variables.BoolVariables[0].Value = false;
             Finish();
         }
@@ -34,13 +32,11 @@ namespace Multiplayer
 
     class UnScrew : FsmStateAction
     {
-        public delegate void Send(int id, int doi);
-        Socket send;
-        public UnScrew(Socket send, int id) { this.send = send; this.id = id;}
+        public UnScrew(int id) {this.id = id;}
         int id;
         public override void OnEnter()
         {
-            if (!Fsm.Variables.BoolVariables[0].Value) send.Send(ByteConvertor.Tingen(id, false));
+            if (!Fsm.Variables.BoolVariables[0].Value) Multiplayer.socket.Send(ByteConvertor.Tingen(id, false));
             else Fsm.Variables.BoolVariables[0].Value = false;
             Finish();
         }

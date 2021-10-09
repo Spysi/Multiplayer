@@ -14,10 +14,10 @@ namespace Multiplayer
 {
     public class Multiplayer : Mod
     {
-        public override string ID => "Multiplayer"; //Your mod ID (unique)
-        public override string Name => "Multiplayer"; //You mod name
-        public override string Author => "Spysi, Kiri111enz"; //Your Username
-        public override string Version => "A0.2"; //Version
+        public override string ID => "Multiplayer";
+        public override string Name => "Multiplayer";
+        public override string Author => "Spysi, Kiri111enz";
+        public override string Version => "A0.3";
 
         public override bool Enabled => true;
 
@@ -25,18 +25,18 @@ namespace Multiplayer
 
         private List<Part> parts;
         private List<Bolt> bolts;
-        private List<GameObject> items;
-        public byte idPlayer;
+        public static List<GameObject> items;
+        public static byte idPlayer;
         GameObject databaseBody, databaseMechanics, databaseMotor, databaseOrders, databaseWiring, playerDatabase, player, playerPref, ui, itemPivod;
         Player[] players = new Player[16];
-        Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        public static Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         FsmGameObject playerItem;
         private Queue<Item> queueItems = new Queue<Item>();
         private Queue<Rigidbody> drop = new Queue<Rigidbody>();
         private Queue<Rigidbody> up = new Queue<Rigidbody>();
         private Queue<Part> assem = new Queue<Part>(), disassem = new Queue<Part>();
         private Queue<Bolt> scr = new Queue<Bolt>(), unscr = new Queue<Bolt>();
-        private Queue<GameObject> setTransform = new Queue<GameObject>();
+        public static Queue<GameObject> setZeroTransform = new Queue<GameObject>();
         PlayMakerFSM pickUp;
         public override void MenuOnLoad()
         {
@@ -71,7 +71,7 @@ namespace Multiplayer
                 {
                     socket.Receive(buff, 21, 0);
                     players[buff[0]] = new Player();
-                    players[buff[0]].name = Encoding.UTF8.GetString(buff, 1, 5);
+                    players[buff[0]].name = Encoding.UTF8.GetString(buff, 1, 6);
                     ModConsole.Log(players[buff[0]].name);
                 }
                 if (!socket.Connected) ui.transform.GetChild(2).GetComponent<Text>().text = "Connection failed!";
@@ -106,22 +106,22 @@ namespace Multiplayer
                     switch (state.Name)
                     {
                         case "Screw":
-                            obj.AddAction("Screw", new Screw(socket, bolts.Count));
+                            obj.AddAction("Screw", new Screw(bolts.Count));
                             break;
                         case "Screw 2":
-                            obj.AddAction("Screw 2", new Screw(socket, bolts.Count));
+                            obj.AddAction("Screw 2", new Screw(bolts.Count));
                             break;
                         case "Wait 3":
-                            obj.AddAction("Wait 3", new Screw(socket, bolts.Count));
+                            obj.AddAction("Wait 3", new Screw(bolts.Count));
                             break;
                         case "Unscrew":
-                            obj.AddAction("Unscrew", new UnScrew(socket, bolts.Count));
+                            obj.AddAction("Unscrew", new UnScrew(bolts.Count));
                             break;
                         case "Unscrew 2":
-                            obj.AddAction("Unscrew 2", new UnScrew(socket, bolts.Count));
+                            obj.AddAction("Unscrew 2", new UnScrew(bolts.Count));
                             break;
                         case "Wait 4":
-                            obj.AddAction("Wait 4", new UnScrew(socket, bolts.Count));
+                            obj.AddAction("Wait 4", new UnScrew(bolts.Count));
                             break;
                     }
                     
@@ -146,22 +146,22 @@ namespace Multiplayer
                     switch (state.Name)
                     {
                         case "Screw":
-                            obj.AddAction("Screw", new Screw(socket, bolts.Count));
+                            obj.AddAction("Screw", new Screw(bolts.Count));
                             break;
                         case "Screw 2":
-                            obj.AddAction("Screw 2", new Screw(socket, bolts.Count));
+                            obj.AddAction("Screw 2", new Screw(bolts.Count));
                             break;
                         case "Wait 3":
-                            obj.AddAction("Wait 3", new Screw(socket, bolts.Count));
+                            obj.AddAction("Wait 3", new Screw(bolts.Count));
                             break;
                         case "Unscrew":
-                            obj.AddAction("Unscrew", new UnScrew(socket, bolts.Count));
+                            obj.AddAction("Unscrew", new UnScrew(bolts.Count));
                             break;
                         case "Unscrew 2":
-                            obj.AddAction("Unscrew 2", new UnScrew(socket, bolts.Count));
+                            obj.AddAction("Unscrew 2", new UnScrew(bolts.Count));
                             break;
                         case "Wait 4":
-                            obj.AddAction("Wait 4", new UnScrew(socket, bolts.Count));
+                            obj.AddAction("Wait 4", new UnScrew(bolts.Count));
                             break;
                     }
                     
@@ -179,12 +179,8 @@ namespace Multiplayer
             player = GameObject.Find("PLAYER");
             itemPivod = player.transform.GetChild(3).GetChild(0).GetChild(0).GetChild(0).GetChild(1).GetChild(0).gameObject;
             pickUp = player.transform.GetChild(3).GetChild(0).GetChild(0).GetChild(0).GetChild(1).GetChild(2).gameObject.GetPlayMakerFSM("PickUp");
-            PickUp pickUp2 = new PickUp(socket);
-            pickUp2.items = items;
-            pickUp.InsertAction("Part picked", 0, pickUp2);
-            Drop drop = new Drop(socket);
-            drop.items = items;
-            pickUp.InsertAction("Drop part", 0, drop);
+            pickUp.InsertAction("Part picked", 0, new PickUp());
+            pickUp.InsertAction("Drop part", 0, new Drop());
             
             playerItem = pickUp.FsmVariables.GetFsmGameObject("PickedObject");
             databaseBody = GameObject.Find("DatabaseBody");
@@ -308,108 +304,107 @@ namespace Multiplayer
             while (true)
             {
                 Thread.Sleep(20);
-                socket.Send(ByteConvertor.Transform(player.transform.position, player.transform.rotation.eulerAngles.y, idPlayer));
-                if (playerItem.Value != null)
+                try
                 {
-                    socket.Send(ByteConvertor.Item(playerItem.Value.transform.position, playerItem.Value.transform.rotation, playerItem.Value.GetInstanceID()));
-                }
-                byte[] buffer = new byte[3];
-                float x, y, z;
-                int id2;
-                Item item = new Item();
-                while (socket.Available > 0)
-                {
-                    socket.Receive(buffer, 1, 0);
-                    byte[] buff = new byte[30];
-                    switch (buffer[0])
+                    socket.Send(ByteConvertor.Transform(player.transform.position, player.transform.rotation.eulerAngles.y, idPlayer));
+                    if (!pickUp.FsmVariables.BoolVariables[2].Value && playerItem.Value!=null)
                     {
-                        case 0:
-                            socket.Receive(buff, 21, 0);
-                            players[buff[0]] = new Player();
-                            players[buff[0]].name = Encoding.UTF8.GetString(buff, 1, 20);
-                            players[buff[0]].player = GameObject.Instantiate(playerPref);
-                            break;
-                        case 1:
-                            socket.Receive(buff, 1, 0);
-                            GameObject.Destroy(players[buff[0]].player);
-                            players[buff[0]] = null;
-                            break;
-                        case 3:
-                            socket.Receive(buff, 17, 0);
-                            x = BitConverter.ToSingle(buff, 1);
-                            y = BitConverter.ToSingle(buff, 5);
-                            z = BitConverter.ToSingle(buff, 9);
-                            float rot = BitConverter.ToSingle(buff, 13);
-                            lock (players[buff[0]])
-                            {
-                                players[buff[0]].rotation = Quaternion.Euler(0, rot, 0);
-                                players[buff[0]].position = new Vector3(x, y + 0.6f, z);
-                            }
-                            break;
+                        int id = items.IndexOf(playerItem.Value);
+                        if(id>=0)socket.Send(ByteConvertor.Item(playerItem.Value.transform.position, playerItem.Value.transform.rotation,id));
+                    }
+                    byte[] buffer = new byte[3];
+                    float x, y, z;
+                    int id2;
+                    Item item = new Item();
+                    while (socket.Available > 0)
+                    {
+                        socket.Receive(buffer, 1, 0);
+                        byte[] buff = new byte[30];
+                        switch (buffer[0])
+                        {
+                            case 0:
+                                socket.Receive(buff, 21, 0);
+                                players[buff[0]] = new Player();
+                                players[buff[0]].name = Encoding.UTF8.GetString(buff, 1, 20);
+                                players[buff[0]].player = GameObject.Instantiate(playerPref);
+                                break;
+                            case 1:
+                                socket.Receive(buff, 1, 0);
+                                GameObject.Destroy(players[buff[0]].player);
+                                players[buff[0]] = null;
+                                break;
+                            case 3:
+                                socket.Receive(buff, 17, 0);
+                                x = BitConverter.ToSingle(buff, 1);
+                                y = BitConverter.ToSingle(buff, 5);
+                                z = BitConverter.ToSingle(buff, 9);
+                                float rot = BitConverter.ToSingle(buff, 13);
+                                lock (players[buff[0]])
+                                {
+                                    players[buff[0]].rotation = Quaternion.Euler(0, rot, 0);
+                                    players[buff[0]].position = new Vector3(x, y + 0.6f, z);
+                                }
+                                break;
 
-                        case 4:
-                            try
-                            {
-                                socket.Receive(buff, 28, 0);
-                                id2 = BitConverter.ToInt32(buff, 0);
-                                item.item = items.Find(obj => obj.GetInstanceID() == id2);
-                                x = BitConverter.ToSingle(buff, 4);
-                                y = BitConverter.ToSingle(buff, 8);
-                                z = BitConverter.ToSingle(buff, 12);
-                                item.position = new Vector3(x, y, z);
-                                x = BitConverter.ToSingle(buff, 16);
-                                y = BitConverter.ToSingle(buff, 20);
-                                z = BitConverter.ToSingle(buff, 24);
-                                item.rotation = Quaternion.Euler(x, y, z);
-                                queueItems.Enqueue(item);
-                            }
-                            catch (NullReferenceException)
-                            {
-                                ModConsole.Log("Aboba1");
-                            }
-                            break;
-                        case 5:
-                            try
-                            {
+                            case 4:
+                                    socket.Receive(buff, 28, 0);
+                                    id2 = BitConverter.ToInt32(buff, 0);
+                                    item.item = items[id2];
+                                    x = BitConverter.ToSingle(buff, 4);
+                                    y = BitConverter.ToSingle(buff, 8);
+                                    z = BitConverter.ToSingle(buff, 12);
+                                    item.position = new Vector3(x, y, z);
+                                    x = BitConverter.ToSingle(buff, 16);
+                                    y = BitConverter.ToSingle(buff, 20);
+                                    z = BitConverter.ToSingle(buff, 24);
+                                    item.rotation = Quaternion.Euler(x, y, z);
+                                    queueItems.Enqueue(item);                                
+                                break;
+                            case 5:
+                                    socket.Receive(buff, 5, 0);
+                                    id2 = BitConverter.ToInt32(buff, 0);
+                                    item.item = items[id2];
+                                    if (BitConverter.ToBoolean(buff, 4)) up.Enqueue(item.item.GetComponent<Rigidbody>());
+                                    else drop.Enqueue(item.item.GetComponent<Rigidbody>());
+                                break;
+                            case 6:
+                                socket.Receive(buff, 8, 0);
+                                id2 = BitConverter.ToInt32(buff, 4);
+
+                                parts[BitConverter.ToInt32(buff, 0)].part.Value = items[id2];
+                                assem.Enqueue(parts[BitConverter.ToInt32(buff, 0)]);
+                                break;
+                            case 7:
+                                socket.Receive(buff, 4, 0);
+                                disassem.Enqueue(parts[BitConverter.ToInt32(buff, 0)]);
+                                break;
+                            case 8:
                                 socket.Receive(buff, 5, 0);
-                                id2 = BitConverter.ToInt32(buff, 0);
-                                item.item = items[id2];
-                                if(BitConverter.ToBoolean(buff, 4)) up.Enqueue(item.item.GetComponent<Rigidbody>());
-                                else drop.Enqueue(item.item.GetComponent<Rigidbody>());
-                            }
-                            catch (NullReferenceException)
-                            {
-                                ModConsole.LogError("Multiplayer: 'PickUp' Error");
-                            }
-                            break;
-                        case 6:
-                            socket.Receive(buff, 8, 0);
-                            id2 = BitConverter.ToInt32(buff, 4);
+                                bolts[BitConverter.ToInt32(buff, 1)].bolt.FsmVariables.BoolVariables[0].Value = true;
+                                if (BitConverter.ToBoolean(buff, 0)) scr.Enqueue(bolts[BitConverter.ToInt32(buff, 1)]);
+                                else unscr.Enqueue(bolts[BitConverter.ToInt32(buff, 1)]);
+                                break;
+                            case 9:
+                                items.Clear();
+                                items.AddRange(Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.tag == "PART"));
+                                ModConsole.Log("memem1");
+                                break;
+                            default:
+                                ModConsole.LogWarning("Multiplayer: Wrong message");
+                                break;
 
-                            parts[BitConverter.ToInt32(buff, 0)].part.Value = items.Find(obj => obj.GetInstanceID() == id2);
-                            assem.Enqueue(parts[BitConverter.ToInt32(buff, 0)]);
-                            break;
-                        case 7:
-                            socket.Receive(buff, 4, 0);
-                            disassem.Enqueue(parts[BitConverter.ToInt32(buff, 0)]);
-                            break;
-                        case 8:
-                            socket.Receive(buff, 5, 0);
-                            bolts[BitConverter.ToInt32(buff, 1)].bolt.FsmVariables.BoolVariables[0].Value = true;
-                            if (BitConverter.ToBoolean(buff, 0)) scr.Enqueue(bolts[BitConverter.ToInt32(buff, 1)]);
-                            else unscr.Enqueue(bolts[BitConverter.ToInt32(buff, 1)]);
-                            break;
-                        case 9:
-                            items.Clear();
-                            items.AddRange(Resources.FindObjectsOfTypeAll<GameObject>().Where(obj => obj.tag == "PART"));
-                            break;
-                        default:
-                            ModConsole.LogWarning("Multiplayer: Wrong message");
-                            break;
-
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    ModConsole.LogError("Multiplayer: Error");
+                    ModConsole.LogError(ex.Message);
+                    //ModConsole.LogError(ex.TargetSite.Name);
+                    ModConsole.LogError(ex.StackTrace);
+                }
             }
+            
         }
 
         public override void FixedUpdate()
@@ -466,9 +461,9 @@ namespace Multiplayer
                 unscr.Dequeue().UnScrew();
             }
 
-            while (setTransform.Count > 0)
+            while (setZeroTransform.Count > 0)
             {
-                GameObject temp = setTransform.Dequeue();
+                GameObject temp = setZeroTransform.Dequeue();
                 temp.transform.localPosition = new Vector3(0, 0, 0);
                 temp.transform.localRotation = new Quaternion(0, 0, 0, 0);
             }
@@ -482,13 +477,11 @@ namespace Multiplayer
             part.part = part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").FsmVariables.GetFsmGameObject("Part");
             part.boo = part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").FsmVariables.GetFsmBool("Setup");
             part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").Initialize();
-            part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").InsertAction(stateName, 0, new RemovePart(socket, parts.Count, part.boo));
+            part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").InsertAction(stateName, 0, new RemovePart(parts.Count, part.boo));
             part.removeEvent = "REMOVE";
             part.remove = part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ThisPart").Value.GetPlayMakerFSM("Removal").SendEvent;
-            part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").InsertAction(stateName2, 0, new Assembly(socket, parts.Count));
-            FixPos fixPos = new FixPos();
-            fixPos.temp = setTransform;
-            part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").AddAction(fixStateName, fixPos);
+            part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").InsertAction(stateName2, 0, new Assembly(parts.Count));
+            part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").AddAction(fixStateName, new FixPos());
             part.assembleEvent = "ASSEMBLE";
             part.assemble = part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject(triggerName).Value.GetPlayMakerFSM("Assembly").SendEvent;
             parts.Add(part);
@@ -500,7 +493,7 @@ namespace Multiplayer
             part.gameObjDB = database.transform.GetChild(ino).gameObject;
 
             part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").Initialize();
-            part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(socket, parts.Count, null));
+            part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(parts.Count, null));
             part.remove = part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value.GetPlayMakerFSM("Removal").SendEvent;
             part.removeEvent = "REMOVE";
 
@@ -510,7 +503,7 @@ namespace Multiplayer
             part.part = temp.GetPlayMakerFSM("Assembly").FsmVariables.GetFsmGameObject("Part");
             part.assemble = temp.GetPlayMakerFSM("Assembly").SendEvent;
 
-            temp.GetPlayMakerFSM("Assembly").InsertAction(stateName2, 0, new Assembly(socket, parts.Count));
+            temp.GetPlayMakerFSM("Assembly").InsertAction(stateName2, 0, new Assembly(parts.Count));
 
             part.assembleEvent = "ASSEMBLE";
 
@@ -532,7 +525,7 @@ namespace Multiplayer
             GameObject temp = part.gameObjDB.GetComponent<PlayMakerFSM>().FsmVariables.GetFsmGameObject("ActivateThis").Value;
 
             temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").Initialize();
-            temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(socket, parts.Count, null));
+            temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").AddAction(stateName, new RemovePart(parts.Count, null));
             part.remove = temp.transform.GetChild(temp.transform.childCount - 1).GetPlayMakerFSM("Removal").SendEvent;
             part.removeEvent = "REMOVE";
 
@@ -542,7 +535,7 @@ namespace Multiplayer
             part.part = temp.GetPlayMakerFSM("Assembly").FsmVariables.GetFsmGameObject("Part");
             part.assemble = temp.GetPlayMakerFSM("Assembly").SendEvent;
 
-            temp.GetPlayMakerFSM("Assembly").InsertAction(stateName2, 0, new Assembly(socket, parts.Count));
+            temp.GetPlayMakerFSM("Assembly").InsertAction(stateName2, 0, new Assembly(parts.Count));
             part.assembleEvent = "ASSEMBLE";
 
             FsmTransition[] transition = new FsmTransition[2];
@@ -555,11 +548,5 @@ namespace Multiplayer
 
             parts.Add(part);
         }
-
-
-
-
-
-
     }
 }
